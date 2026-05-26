@@ -584,7 +584,8 @@ textarea.form-input { resize: vertical; min-height: 80px; }
                   <th>#</th>
                   <th>Name</th>
                   <th>Position</th>
-                  <th>Email</th>
+                  <th>Jersey</th>
+                  <th>Socks</th>
                   <th></th>
                 </tr>
               </thead>
@@ -638,12 +639,13 @@ textarea.form-input { resize: vertical; min-height: 80px; }
     </div>
     <div class="modal-body">
       <p class="text-sm text-muted" style="margin-bottom:1rem">Enter each new player below. Fields marked * are required.</p>
-      <div class="entry-hd">
+      <div class="entry-hd" style="grid-template-columns:2fr 2fr 1fr 1.5fr 1.5fr 1.5fr auto">
         <span class="entry-lbl">First Name *</span>
         <span class="entry-lbl">Last Name *</span>
-        <span class="entry-lbl"># Jersey</span>
+        <span class="entry-lbl">#</span>
+        <span class="entry-lbl">Jersey Size</span>
+        <span class="entry-lbl">Sock Size</span>
         <span class="entry-lbl">Position</span>
-        <span class="entry-lbl">Email</span>
         <span></span>
       </div>
       <div id="add-players-rows"></div>
@@ -791,6 +793,27 @@ const supa = (() => {
       localStorage.setItem("soc_session", JSON.stringify(data));
       return data;
     },
+    async refreshSession() {
+      const raw = localStorage.getItem("soc_session");
+      if (!raw) return null;
+      var stored; try { stored = JSON.parse(raw); } catch { return null; }
+      if (!stored.refresh_token) return null;
+      const res = await fetch(`${CONFIG.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": CONFIG.supabaseKey },
+        body: JSON.stringify({ refresh_token: stored.refresh_token }),
+      });
+      if (!res.ok) { localStorage.removeItem("soc_session"); return null; }
+      const data = await res.json();
+      _session = data;
+      localStorage.setItem("soc_session", JSON.stringify(data));
+      return data;
+    },
+    isExpired() {
+      if (!_session) return true;
+      var exp = _session.expires_at || 0;
+      return exp < (Date.now()/1000 + 60);
+    },
     async signOut() {
       await fetch(`${CONFIG.supabaseUrl}/auth/v1/logout`, {
         method: "POST", headers: headers(),
@@ -822,7 +845,7 @@ const STATE = {
 };
 
 const SIZES = ["YS","YM","YL","XS","S","M","L","XL","XXL","XXXL"];
-const POSITIONS = ["Forward","Defence","Goalie","N/A"];
+const POSITIONS = ["Player","Goalie"];
 
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", async () => {
@@ -842,12 +865,17 @@ function hideLoader() {
 
 async function bootApp() {
   try {
+    if (supa.auth.isExpired()) {
+      const refreshed = await supa.auth.refreshSession();
+      if (!refreshed) { supa.auth.signOut(); hideLoader(); return; }
+    }
     await loadTeam();
     showApp();
     loadRoster();
     loadOrders();
     loadRequests();
   } catch (e) {
+    console.error(e);
     supa.auth.signOut();
     hideLoader();
     showToast("Session expired - please sign in again.", "error");
@@ -936,29 +964,23 @@ async function loadRoster() {
 }
 
 function renderRoster() {
-  const tbody = document.getElementById("roster-tbody");
+  var tbody = document.getElementById("roster-tbody");
   if (!STATE.players.length) {
-    tbody.innerHTML = `<tr><td colspan="5">
-      <div class="empty-state">
-        <div class="empty-icon">🏒</div>
-        <h3>No players yet</h3>
-        <p>Use "Add Players" to build your roster</p>
-      </div>
-    </td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🏒</div><h3>No players yet</h3><p>Use Add Players to build your roster</p></div></td></tr>';
     return;
   }
-  tbody.innerHTML = STATE.players.map(p => {
-    const pos = p.position || "N/A";
-    const posClass = pos === "Forward" ? "pos-F" : pos === "Defence" ? "pos-D" : pos === "Goalie" ? "pos-G" : "pos-N";
-    return `<tr>
-      <td><span class="num">${esc(p.number || "—")}</span></td>
-      <td><strong>${esc(p.first_name)} ${esc(p.last_name)}</strong></td>
-      <td><span class="pos-badge ${posClass}">${esc(pos)}</span></td>
-      <td class="text-sm text-muted">${esc(p.email || "—")}</td>
-      <td>
-        <button class="btn-icon" title="Remove player" onclick="deactivatePlayer('${p.id}')">🗑</button>
-      </td>
-    </tr>`;
+  tbody.innerHTML = STATE.players.map(function(p) {
+    var pos = p.position || "";
+    var posClass = pos === "Goalie" ? "pos-G" : pos === "Player" ? "pos-F" : "pos-N";
+    var posHtml = pos ? '<span class="pos-badge ' + posClass + '">' + esc(pos) + '</span>' : '<span class="pos-badge pos-N">—</span>';
+    return '<tr>' +
+      '<td><span class="num">' + esc(p.number || "—") + '</span></td>' +
+      '<td><strong>' + esc(p.first_name) + ' ' + esc(p.last_name) + '</strong></td>' +
+      '<td>' + posHtml + '</td>' +
+      '<td class="text-sm">' + esc(p.jersey_size || "—") + '</td>' +
+      '<td class="text-sm">' + esc(p.sock_size || "—") + '</td>' +
+      '<td><button class="btn-icon" title="Remove player" onclick="deactivatePlayer('' + p.id + '')">🗑</button></td>' +
+      '</tr>';
   }).join("");
 }
 
@@ -1072,37 +1094,38 @@ function openAddPlayersModal() {
 }
 
 function addPlayerRow() {
-  const container = document.getElementById("add-players-rows");
-  const div = document.createElement("div");
+  var container = document.getElementById("add-players-rows");
+  var div = document.createElement("div");
   div.className = "player-row-entry";
-  div.innerHTML = `
-    <input type="text"   class="entry-input p-first" placeholder="First name">
-    <input type="text"   class="entry-input p-last"  placeholder="Last name">
-    <input type="text"   class="entry-input p-num"   placeholder="#" maxlength="3">
-    <select class="entry-input p-pos">
-      <option value="">Position...</option>
-      ${POSITIONS.map(p => `<option value="${p}">${p}</option>`).join("")}
-    </select>
-    <input type="email"  class="entry-input p-email" placeholder="Email (opt.)">
-    <button class="btn-icon" onclick="this.closest('.player-row-entry').remove()" title="Remove row">✕</button>
-  `;
+  div.style.gridTemplateColumns = "2fr 2fr 1fr 1.5fr 1.5fr 1.5fr auto";
+  var sizeOpts = '<option value="">—</option>' + SIZES.map(function(s){ return '<option value="' + s + '">' + s + '</option>'; }).join("");
+  var posOpts = '<option value="">—</option>' + POSITIONS.map(function(p){ return '<option value="' + p + '">' + p + '</option>'; }).join("");
+  div.innerHTML =
+    '<input type="text" class="entry-input p-first" placeholder="First name">' +
+    '<input type="text" class="entry-input p-last" placeholder="Last name">' +
+    '<input type="text" class="entry-input p-num" placeholder="#" maxlength="3">' +
+    '<select class="entry-input p-jersey-size">' + sizeOpts + '</select>' +
+    '<select class="entry-input p-sock-size">' + sizeOpts + '</select>' +
+    '<select class="entry-input p-pos">' + posOpts + '</select>' +
+    '<button class="btn-icon" onclick="this.closest(\".player-row-entry\").remove()" title="Remove row">✕</button>';
   container.appendChild(div);
 }
 
 async function savePlayers() {
   const rows = document.querySelectorAll(".player-row-entry");
   const players = [];
-  rows.forEach(row => {
-    const first = row.querySelector(".p-first").value.trim();
-    const last  = row.querySelector(".p-last").value.trim();
+  rows.forEach(function(row) {
+    var first = row.querySelector(".p-first").value.trim();
+    var last  = row.querySelector(".p-last").value.trim();
     if (!first && !last) return;
     players.push({
-      team_id:    STATE.team.id,
-      first_name: first,
-      last_name:  last,
-      number:     row.querySelector(".p-num").value.trim() || null,
-      position:   row.querySelector(".p-pos").value || "N/A",
-      email:      row.querySelector(".p-email").value.trim() || null,
+      team_id:      STATE.team.id,
+      first_name:   first,
+      last_name:    last,
+      number:       row.querySelector(".p-num").value.trim() || null,
+      position:     row.querySelector(".p-pos").value || null,
+      jersey_size:  row.querySelector(".p-jersey-size") ? (row.querySelector(".p-jersey-size").value || null) : null,
+      sock_size:    row.querySelector(".p-sock-size") ? (row.querySelector(".p-sock-size").value || null) : null,
     });
   });
   if (!players.length) { showToast("Enter at least one player.", "error"); return; }
