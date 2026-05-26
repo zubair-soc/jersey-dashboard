@@ -549,9 +549,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
             <button class="btn-action" onclick="openNewOrderModal()">
               🛒 Submit Jersey Order
             </button>
-            <button class="btn-action" onclick="openSizeSwapModal()">
-              ↔ Size Swap Request
-            </button>
             <button class="btn-action" onclick="openReplacementModal()">
               🔄 Replacement Request
             </button>
@@ -617,7 +614,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
           <span class="section-heading" style="margin:0">Service Requests</span>
           <div style="display:flex;gap:.5rem">
-            <button class="btn-action" style="flex:0;min-width:auto;padding:.5rem .9rem;font-size:.78rem" onclick="openSizeSwapModal()">↔ Size Swap</button>
             <button class="btn-action" style="flex:0;min-width:auto;padding:.5rem .9rem;font-size:.78rem" onclick="openReplacementModal()">🔄 Replace</button>
           </div>
         </div>
@@ -684,40 +680,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-new-order')">Cancel</button>
       <button class="btn-primary" style="width:auto;padding:.6rem 1.75rem" onclick="submitOrder()">Submit Order</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Size Swap Modal ───────────────────────────────────── -->
-<div id="modal-size-swap" class="modal-backdrop hidden">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <span class="modal-title">Size Swap Request</span>
-      <button class="modal-close" onclick="closeModal('modal-size-swap')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Player</label>
-        <select id="swap-player" class="select-input"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Current Size</label>
-        <select id="swap-from" class="select-input">
-          <option value="">Select size...</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Requested Size</label>
-        <div class="size-grid" id="swap-to-sizes"></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Reason / Notes</label>
-        <textarea id="swap-notes" class="form-input" placeholder="e.g. jersey arrived too small, player is a size M not S"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-size-swap')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:.6rem 1.75rem" onclick="submitSizeSwap()">Submit Request</button>
     </div>
   </div>
 </div>
@@ -1237,56 +1199,6 @@ async function submitOrder() {
   }
 }
 
-// ── Size Swap Modal ───────────────────────────────────────────
-function openSizeSwapModal() {
-  const sel = document.getElementById("swap-player");
-  sel.innerHTML = `<option value="">Select player...</option>` +
-    STATE.players.map(p => `<option value="${p.id}">${esc(p.first_name)} ${esc(p.last_name)}</option>`).join("");
-  const from = document.getElementById("swap-from");
-  from.innerHTML = `<option value="">Select size...</option>` +
-    SIZES.map(s => `<option value="${s}">${s}</option>`).join("");
-  const toEl = document.getElementById("swap-to-sizes");
-  STATE.selectedSwapSize = null;
-  toEl.innerHTML = SIZES.map(s => `
-    <div class="size-chip" onclick="selectSwapSize(this,'${s}')">${s}</div>
-  `).join("");
-  document.getElementById("swap-notes").value = "";
-  openModal("modal-size-swap");
-}
-
-function selectSwapSize(el, size) {
-  document.querySelectorAll("#swap-to-sizes .size-chip").forEach(c => c.classList.remove("active"));
-  el.classList.add("active");
-  STATE.selectedSwapSize = size;
-}
-
-async function submitSizeSwap() {
-  const pid   = document.getElementById("swap-player").value;
-  const from  = document.getElementById("swap-from").value;
-  const notes = document.getElementById("swap-notes").value.trim();
-  const to    = STATE.selectedSwapSize;
-  if (!pid || !from || !to) { showToast("Please fill in all fields.", "error"); return; }
-  const player = STATE.players.find(p => p.id === pid);
-  try {
-    await supa.rest("service_requests", {
-      method: "POST",
-      body: {
-        team_id:     STATE.team.id,
-        type:        "size_swap",
-        player_id:   pid,
-        player_name: player ? `${player.first_name} ${player.last_name}` : null,
-        details:     { from_size: from, to_size: to, notes },
-      },
-    });
-    closeModal("modal-size-swap");
-    await loadRequests();
-    showToast("Size swap request submitted!", "success");
-    await notifySOC({ type: "service_request", subtype: "size_swap", teamName: STATE.team.name, teamId: STATE.team.id });
-  } catch (e) {
-    showToast("Error: " + e.message, "error");
-  }
-}
-
 // ── Replacement Modal ─────────────────────────────────────────
 function openReplacementModal() {
   const sel = document.getElementById("rep-player");
@@ -1438,10 +1350,89 @@ function statusLabel(s) {
   }[s] || s;
 }
 
-// ── Edit Team (stub - extend as needed) ──────────────────────
+// ── Edit Team ────────────────────────────────────────────────
 function openEditTeamModal() {
-  showToast("Edit team coming soon - contact SOC to update team details.", "info");
+  var t = STATE.team;
+  document.getElementById("edit-team-name").value = t.name || "";
+  document.getElementById("edit-team-division").value = t.division || "";
+  document.getElementById("edit-team-season").value = t.season || "";
+  document.getElementById("edit-team-colour1").value = t.colour_primary || "#c0392b";
+  document.getElementById("edit-team-colour2").value = t.colour_secondary || "#1a1a1a";
+  openModal("modal-edit-team");
+}
+
+async function saveTeamSettings() {
+  var body = {
+    name:             document.getElementById("edit-team-name").value.trim(),
+    division:         document.getElementById("edit-team-division").value.trim(),
+    season:           document.getElementById("edit-team-season").value.trim(),
+    colour_primary:   document.getElementById("edit-team-colour1").value,
+    colour_secondary: document.getElementById("edit-team-colour2").value,
+  };
+  if (!body.name) { showToast("Team name is required.", "error"); return; }
+  var btn = document.getElementById("save-team-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  try {
+    await supa.rest("teams?id=eq." + STATE.team.id, { method: "PATCH", body: body });
+    Object.assign(STATE.team, body);
+    renderTeamProfile();
+    document.getElementById("topbar-team-name").textContent = STATE.team.name;
+    closeModal("modal-edit-team");
+    showToast("Team settings saved!", "success");
+  } catch(e) {
+    showToast("Error saving: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Save Changes";
+  }
 }
 </script>
+
+<!-- ── Edit Team Modal ──────────────────────────────────── -->
+<div id="modal-edit-team" class="modal-backdrop hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">Team Settings</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-team')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Team Name *</label>
+        <input type="text" id="edit-team-name" class="form-input" placeholder="e.g. Ice Wolves">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Division</label>
+        <input type="text" id="edit-team-division" class="form-input" placeholder="e.g. Tier 2 Beginner+">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Season</label>
+        <input type="text" id="edit-team-season" class="form-input" placeholder="e.g. 2025-26">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div class="form-group">
+          <label class="form-label">Primary Colour</label>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <input type="color" id="edit-team-colour1" value="#c0392b"
+              style="width:40px;height:36px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;padding:2px">
+            <input type="text" id="edit-team-colour1-hex" class="form-input" placeholder="#c0392b"
+              style="flex:1" oninput="document.getElementById('edit-team-colour1').value=this.value">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Secondary Colour</label>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <input type="color" id="edit-team-colour2" value="#1a1a1a"
+              style="width:40px;height:36px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;padding:2px">
+            <input type="text" id="edit-team-colour2-hex" class="form-input" placeholder="#1a1a1a"
+              style="flex:1" oninput="document.getElementById('edit-team-colour2').value=this.value">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-edit-team')">Cancel</button>
+      <button class="btn-primary" id="save-team-btn" style="width:auto;padding:.6rem 1.75rem" onclick="saveTeamSettings()">Save Changes</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
