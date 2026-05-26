@@ -969,19 +969,21 @@ function renderRoster() {
     tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🏒</div><h3>No players yet</h3><p>Use Add Players to build your roster</p></div></td></tr>';
     return;
   }
-  tbody.innerHTML = STATE.players.map(function(p) {
+  var rows = "";
+  STATE.players.forEach(function(p) {
     var pos = p.position || "";
     var posClass = pos === "Goalie" ? "pos-G" : pos === "Player" ? "pos-F" : "pos-N";
-    var posHtml = pos ? '<span class="pos-badge ' + posClass + '">' + esc(pos) + '</span>' : '<span class="pos-badge pos-N">—</span>';
-    return '<tr>' +
-      '<td><span class="num">' + esc(p.number || "—") + '</span></td>' +
-      '<td><strong>' + esc(p.first_name) + ' ' + esc(p.last_name) + '</strong></td>' +
-      '<td>' + posHtml + '</td>' +
-      '<td class="text-sm">' + esc(p.jersey_size || "—") + '</td>' +
-      '<td class="text-sm">' + esc(p.sock_size || "—") + '</td>' +
-      '<td><button class="btn-icon" title="Remove player" onclick="deactivatePlayer('' + p.id + '')">🗑</button></td>' +
-      '</tr>';
-  }).join("");
+    var posHtml = pos ? "<span class=\"pos-badge " + posClass + "\">" + esc(pos) + "</span>" : "<span class=\"pos-badge pos-N\">—</span>";
+    rows += "<tr>" +
+      "<td><span class=\"num\">" + esc(p.number || "—") + "</span></td>" +
+      "<td><strong>" + esc(p.first_name) + " " + esc(p.last_name) + "</strong></td>" +
+      "<td>" + posHtml + "</td>" +
+      "<td class=\"text-sm\">" + esc(p.jersey_size || "—") + "</td>" +
+      "<td class=\"text-sm\">" + esc(p.sock_size || "—") + "</td>" +
+      "<td><button class=\"btn-icon\" data-pid=\"" + p.id + "\" onclick=\"deactivatePlayer(this.dataset.pid)\">🗑</button></td>" +
+      "</tr>";
+  });
+  tbody.innerHTML = rows;
 }
 
 async function deactivatePlayer(id) {
