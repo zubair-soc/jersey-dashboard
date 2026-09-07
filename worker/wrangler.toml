@@ -1,12 +1,9 @@
 name = "soc-jersey-portal-api"
 main = "worker.js"
-compatibility_date = "2024-11-01"
+compatibility_date = "2025-01-01"
 
-[vars]
-ALLOWED_ORIGIN = "https://jerseys.shinnyofchampions.com"
-
-# Set secrets via CLI (never commit these):
-# wrangler secret put SUPABASE_URL
-# wrangler secret put SUPABASE_SERVICE_KEY
-# wrangler secret put NOTIFY_EMAIL
-# wrangler secret put RESEND_API_KEY   (optional)
+# Secrets are set via `wrangler secret put <NAME>` — never stored here:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_KEY
+#   NOTIFY_EMAIL
+#   RESEND_API_KEY   (optional)

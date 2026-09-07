@@ -1,1463 +1,1234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jersey Portal — Shinny of Champions</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOC Jersey Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-/* ── Variables ─────────────────────────────────────────── */
-:root {
-  --red:       #c0392b;
-  --red-dark:  #96281b;
-  --red-glow:  rgba(192,57,43,.18);
-  --dark:      #1a1a1a;
-  --dark2:     #242424;
-  --dark3:     #2e2e2e;
-  --mid:       #3a3a3a;
-  --border:    #3f3f3f;
-  --text:      #f0f0f0;
-  --muted:     #8a8a8a;
-  --success:   #27ae60;
-  --warn:      #e67e22;
-  --info:      #2980b9;
-  --font-head: 'Barlow Condensed', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --radius:    8px;
-  --shadow:    0 4px 24px rgba(0,0,0,.45);
-}
+  :root {
+    --rink-navy: #0f2036;
+    --ice: #f5f8fa;
+    --ice-line: #dde5eb;
+    --steel: #35597a;
+    --steel-dark: #24405a;
+    --ink: #14181c;
+    --ink-soft: #55636f;
+    --gold: #e3a23c;
+    --danger: #b3413a;
+    --ok: #3a7d5c;
+    --team-primary: #1a1a1a;
+    --team-secondary: #ffffff;
+    --radius: 6px;
+  }
 
-/* ── Reset ─────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; scroll-behavior: smooth; }
-body {
-  font-family: var(--font-body);
-  background: var(--dark);
-  color: var(--text);
-  min-height: 100vh;
-  line-height: 1.5;
-}
-button { cursor: pointer; font-family: var(--font-body); }
-input, select, textarea { font-family: var(--font-body); }
-a { color: var(--red); text-decoration: none; }
+  * { box-sizing: border-box; }
 
-/* ── Utility ────────────────────────────────────────────── */
-.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
-.hidden { display: none !important; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.gap-2 { gap: .5rem; }
-.gap-3 { gap: .75rem; }
-.mt-1 { margin-top: .25rem; }
-.mt-2 { margin-top: .5rem; }
-.mt-3 { margin-top: .75rem; }
-.mt-4 { margin-top: 1rem; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--ice);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
 
-/* ── Loader ─────────────────────────────────────────────── */
-#global-loader {
-  position: fixed; inset: 0; background: var(--dark);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999; transition: opacity .3s;
-}
-#global-loader.fade-out { opacity: 0; pointer-events: none; }
-.loader-ring {
-  width: 48px; height: 48px;
-  border: 3px solid var(--border);
-  border-top-color: var(--red);
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+  h1, h2, h3, .nameplate, .stat-num {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
 
-/* ── Top bar ────────────────────────────────────────────── */
-#topbar {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--dark2);
-  border-bottom: 1px solid var(--border);
-  padding: .75rem 1.5rem;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem;
-}
-.topbar-brand {
-  display: flex; align-items: center; gap: .75rem;
-}
-.topbar-logo { height: 32px; }
-.topbar-title {
-  font-family: var(--font-head);
-  font-size: 1.25rem; font-weight: 700;
-  letter-spacing: .03em;
-  color: var(--text);
-}
-.topbar-title span { color: var(--red); }
-.topbar-right { display: flex; align-items: center; gap: .75rem; }
-.team-badge {
-  font-size: .75rem; font-weight: 600;
-  background: var(--red-glow); color: var(--red);
-  border: 1px solid var(--red);
-  padding: .2rem .65rem; border-radius: 99px;
-  letter-spacing: .04em;
-}
-.btn-ghost {
-  background: none; border: 1px solid var(--border);
-  color: var(--muted); padding: .35rem .75rem;
-  border-radius: var(--radius); font-size: .8rem;
-  transition: all .15s;
-}
-.btn-ghost:hover { border-color: var(--text); color: var(--text); }
+  button, input, select, textarea { font-family: inherit; font-size: inherit; }
 
-/* ── Auth Screen ─────────────────────────────────────────── */
-#auth-screen {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background:
-    radial-gradient(ellipse 800px 600px at 50% 0%, rgba(192,57,43,.12) 0%, transparent 70%),
-    var(--dark);
-  padding: 2rem;
-}
-.auth-card {
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
-  width: 100%; max-width: 420px;
-  box-shadow: var(--shadow);
-  animation: slide-up .4s ease both;
-}
-@keyframes slide-up {
-  from { opacity:0; transform:translateY(20px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.auth-logo { display: block; height: 44px; margin: 0 auto 1.5rem; }
-.auth-heading {
-  font-family: var(--font-head);
-  font-size: 2rem; font-weight: 800;
-  text-align: center; letter-spacing: .04em;
-  margin-bottom: .25rem;
-}
-.auth-sub {
-  color: var(--muted); font-size: .85rem;
-  text-align: center; margin-bottom: 2rem;
-}
-.form-group { margin-bottom: 1rem; }
-.form-label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: .35rem; letter-spacing: .06em; text-transform: uppercase; }
-.form-input {
-  width: 100%; background: var(--dark3); border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--text);
-  padding: .65rem .9rem; font-size: .95rem;
-  transition: border-color .15s, box-shadow .15s;
-  outline: none;
-}
-.form-input:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-glow); }
-.btn-primary {
-  width: 100%; background: var(--red); color: #fff;
-  border: none; border-radius: var(--radius);
-  padding: .75rem; font-size: 1rem; font-weight: 600;
-  letter-spacing: .02em;
-  transition: background .15s, transform .1s;
-}
-.btn-primary:hover  { background: var(--red-dark); }
-.btn-primary:active { transform: scale(.98); }
-.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-.auth-error {
-  background: rgba(192,57,43,.15); border: 1px solid rgba(192,57,43,.4);
-  color: #e88; border-radius: var(--radius); padding: .65rem .9rem;
-  font-size: .85rem; margin-top: .75rem;
-}
+  a { color: var(--steel); }
 
-/* ── Main Layout ─────────────────────────────────────────── */
-#app {
-  max-width: 1100px; margin: 0 auto;
-  padding: 1.5rem 1.5rem 4rem;
-}
+  /* ---------- Auth screen ---------- */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--rink-navy);
+  }
 
-/* ── Dashboard Grid ──────────────────────────────────────── */
-.dash-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.25rem;
-  margin-top: 1.25rem;
-}
-@media (max-width: 768px) {
-  .dash-grid { grid-template-columns: 1fr; }
-}
+  .auth-card {
+    width: 360px;
+    max-width: 90vw;
+    background: var(--ice);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+  }
 
-/* ── Cards ───────────────────────────────────────────────── */
-.card {
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.card-header {
-  padding: 1rem 1.25rem .75rem;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.card-title {
-  font-family: var(--font-head);
-  font-size: 1.1rem; font-weight: 700;
-  letter-spacing: .04em; text-transform: uppercase;
-}
-.card-body { padding: 1.25rem; }
+  .auth-mark {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
 
-/* ── Team Profile Card ───────────────────────────────────── */
-.team-profile {
-  display: flex; flex-direction: column; gap: .75rem;
-}
-.team-name-big {
-  font-family: var(--font-head);
-  font-size: 1.6rem; font-weight: 800;
-  line-height: 1.1; letter-spacing: .02em;
-}
-.team-meta-row { display: flex; flex-direction: column; gap: .3rem; }
-.team-meta-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--muted); }
-.team-meta-item strong { color: var(--text); }
-.colour-swatch {
-  display: inline-block; width: 14px; height: 14px;
-  border-radius: 3px; border: 1px solid rgba(255,255,255,.15);
-  vertical-align: middle;
-}
-.stat-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: .5rem; margin-top: .5rem;
-}
-.stat-box {
-  background: var(--dark3); border-radius: var(--radius);
-  padding: .65rem .75rem; text-align: center;
-}
-.stat-num {
-  font-family: var(--font-head); font-size: 1.8rem; font-weight: 800;
-  color: var(--red); line-height: 1;
-}
-.stat-lbl { font-size: .7rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-top: .2rem; }
+  .auth-card h1 {
+    font-size: 26px;
+    margin: 0 0 24px 0;
+    color: var(--rink-navy);
+  }
 
-/* ── Action Buttons ──────────────────────────────────────── */
-.actions-bar {
-  display: flex; gap: .65rem; flex-wrap: wrap;
-  margin-top: .5rem;
-}
-.btn-action {
-  flex: 1; min-width: 120px;
-  background: var(--dark3); border: 1px solid var(--border);
-  color: var(--text); border-radius: var(--radius);
-  padding: .6rem .75rem; font-size: .82rem; font-weight: 600;
-  letter-spacing: .02em;
-  display: flex; align-items: center; justify-content: center; gap: .4rem;
-  transition: all .15s;
-}
-.btn-action:hover { border-color: var(--red); color: var(--red); background: var(--red-glow); }
-.btn-action.primary { background: var(--red); border-color: var(--red); color: #fff; }
-.btn-action.primary:hover { background: var(--red-dark); }
+  .field { margin-bottom: 16px; }
 
-/* ── Tab Nav ─────────────────────────────────────────────── */
-.tab-nav {
-  display: flex; gap: 0; border-bottom: 1px solid var(--border);
-  margin-bottom: 1.25rem; overflow-x: auto;
-}
-.tab-btn {
-  background: none; border: none; color: var(--muted);
-  padding: .75rem 1.25rem; font-size: .85rem; font-weight: 600;
-  letter-spacing: .04em; text-transform: uppercase;
-  border-bottom: 2px solid transparent;
-  transition: all .15s; white-space: nowrap;
-  margin-bottom: -1px;
-}
-.tab-btn:hover { color: var(--text); }
-.tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
 
-/* ── Table ───────────────────────────────────────────────── */
-.data-table-wrap { overflow-x: auto; }
-.data-table {
-  width: 100%; border-collapse: collapse; font-size: .875rem;
-}
-.data-table th {
-  text-align: left; padding: .6rem .9rem;
-  font-size: .7rem; font-weight: 600; letter-spacing: .07em;
-  text-transform: uppercase; color: var(--muted);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-.data-table td {
-  padding: .7rem .9rem; border-bottom: 1px solid rgba(255,255,255,.04);
-  vertical-align: middle;
-}
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: rgba(255,255,255,.02); }
-.data-table .num { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; color: var(--red); }
-.data-table .pos-badge {
-  font-size: .7rem; font-weight: 600; padding: .15rem .5rem;
-  border-radius: 99px; letter-spacing: .04em; text-transform: uppercase;
-}
-.pos-F  { background: rgba(39,174,96,.15);  color: #4cd87a; }
-.pos-D  { background: rgba(41,128,185,.15); color: #5baddb; }
-.pos-G  { background: rgba(192,57,43,.15);  color: var(--red); }
-.pos-N  { background: var(--dark3); color: var(--muted); }
+  .field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--ice-line);
+    border-radius: var(--radius);
+    background: #fff;
+  }
 
-/* ── Status Pills ────────────────────────────────────────── */
-.status-pill {
-  font-size: .7rem; font-weight: 600; padding: .2rem .65rem;
-  border-radius: 99px; letter-spacing: .04em; text-transform: uppercase;
-  white-space: nowrap;
-}
-.s-pending     { background: rgba(230,126,34,.15); color: #e8933a; border:1px solid rgba(230,126,34,.3); }
-.s-confirmed   { background: rgba(41,128,185,.15); color: #5baddb; border:1px solid rgba(41,128,185,.3); }
-.s-in_production { background: rgba(142,68,173,.15); color: #bf80e0; border:1px solid rgba(142,68,173,.3); }
-.s-shipped     { background: rgba(39,174,96,.15); color: #4cd87a; border:1px solid rgba(39,174,96,.3); }
-.s-delivered   { background: rgba(39,174,96,.25); color: #2ecc71; border:1px solid rgba(39,174,96,.5); }
-.s-cancelled   { background: rgba(100,100,100,.15); color: var(--muted); border:1px solid var(--border); }
-.s-open        { background: rgba(230,126,34,.15); color: #e8933a; border:1px solid rgba(230,126,34,.3); }
-.s-in_review   { background: rgba(41,128,185,.15); color: #5baddb; border:1px solid rgba(41,128,185,.3); }
-.s-resolved    { background: rgba(39,174,96,.15); color: #4cd87a; border:1px solid rgba(39,174,96,.3); }
-.s-denied      { background: rgba(192,57,43,.15); color: var(--red); border:1px solid rgba(192,57,43,.3); }
+  .field input:focus, button:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--steel);
+    outline-offset: 1px;
+  }
 
-/* ── Empty state ────────────────────────────────────────── */
-.empty-state {
-  text-align: center; padding: 3rem 1.5rem; color: var(--muted);
-}
-.empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
-.empty-state h3 { font-family: var(--font-head); font-size: 1.1rem; color: var(--text); margin-bottom: .4rem; }
-.empty-state p { font-size: .85rem; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--steel);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn:hover { background: var(--steel-dark); }
+  .btn.full { width: 100%; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--steel);
+    border: 1px solid var(--ice-line);
+  }
+  .btn.ghost:hover { background: #fff; }
+  .btn.danger { background: var(--danger); }
+  .btn.danger:hover { background: #8f342e; }
+  .btn:disabled { opacity: 0.55; cursor: default; }
 
-/* ── Modals ─────────────────────────────────────────────── */
-.modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  display: flex; align-items: flex-start; justify-content: center;
-  padding: 2rem 1rem; z-index: 1000;
-  overflow-y: auto;
-  animation: fade-in .15s ease both;
-}
-@keyframes fade-in { from { opacity:0; } to { opacity:1; } }
-.modal {
-  background: var(--dark2); border: 1px solid var(--border);
-  border-radius: 12px; width: 100%;
-  box-shadow: var(--shadow);
-  animation: slide-up .2s ease both;
-}
-.modal-sm  { max-width: 480px; }
-.modal-md  { max-width: 640px; }
-.modal-lg  { max-width: 900px; }
-.modal-header {
-  padding: 1.25rem 1.5rem 1rem;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.modal-title { font-family: var(--font-head); font-size: 1.4rem; font-weight: 800; letter-spacing: .04em; }
-.modal-close {
-  background: none; border: none; color: var(--muted);
-  font-size: 1.5rem; line-height: 1; padding: 0 .25rem;
-  transition: color .15s;
-}
-.modal-close:hover { color: var(--text); }
-.modal-body { padding: 1.5rem; }
-.modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--border);
-  display: flex; justify-content: flex-end; gap: .65rem;
-}
+  .link-btn {
+    background: none; border: none; color: var(--steel);
+    cursor: pointer; padding: 0; font-size: 13px; margin-top: 4px;
+  }
 
-/* ── Player Roster Entry ─────────────────────────────────── */
-.player-row-entry {
-  display: grid;
-  grid-template-columns: 3fr 3fr 1.5fr 2fr 2fr auto;
-  gap: .5rem; align-items: center;
-  padding: .5rem 0;
-  border-bottom: 1px solid rgba(255,255,255,.04);
-}
-.player-row-entry:last-of-type { border-bottom: none; }
-.entry-hd {
-  display: grid;
-  grid-template-columns: 3fr 3fr 1.5fr 2fr 2fr auto;
-  gap: .5rem; padding: .25rem 0 .5rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: .25rem;
-}
-.entry-lbl { font-size: .7rem; font-weight: 600; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; }
-.entry-input {
-  background: var(--dark3); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--text); padding: .5rem .65rem;
-  font-size: .88rem; width: 100%; outline: none;
-  transition: border-color .15s, box-shadow .15s;
-}
-.entry-input:focus { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-glow); }
-.btn-icon {
-  background: none; border: 1px solid var(--border);
-  color: var(--muted); width: 32px; height: 32px;
-  border-radius: 6px; font-size: 1rem;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s; flex-shrink: 0;
-}
-.btn-icon:hover { border-color: #c0392b; color: #c0392b; }
-.btn-add-row {
-  background: none; border: 1px dashed var(--border);
-  color: var(--muted); border-radius: var(--radius);
-  padding: .5rem; width: 100%; font-size: .85rem;
-  display: flex; align-items: center; justify-content: center; gap: .4rem;
-  margin-top: .75rem; transition: all .15s;
-}
-.btn-add-row:hover { border-color: var(--red); color: var(--red); }
+  .form-msg { font-size: 13px; margin-top: 12px; }
+  .form-msg.error { color: var(--danger); }
+  .form-msg.ok { color: var(--ok); }
 
-/* ── Size Chart ─────────────────────────────────────────── */
-.size-grid {
-  display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem;
-}
-.size-chip {
-  background: var(--dark3); border: 1px solid var(--border);
-  border-radius: 6px; padding: .4rem .75rem;
-  font-size: .85rem; font-weight: 600; cursor: pointer;
-  transition: all .15s; color: var(--text);
-}
-.size-chip:hover   { border-color: var(--red); }
-.size-chip.active  { background: var(--red); border-color: var(--red); color: #fff; }
+  /* ---------- App shell ---------- */
+  #app, #admin-app { display: none; min-height: 100vh; }
+  #app.visible, #admin-app.visible { display: flex; }
 
-/* ── Toast ───────────────────────────────────────────────── */
-#toast-container {
-  position: fixed; bottom: 1.5rem; right: 1.5rem;
-  display: flex; flex-direction: column; gap: .5rem;
-  z-index: 9000; pointer-events: none;
-}
-.toast {
-  background: var(--dark2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: .75rem 1.1rem;
-  font-size: .875rem; box-shadow: var(--shadow);
-  min-width: 240px; max-width: 340px;
-  animation: toast-in .25s ease both;
-  pointer-events: auto;
-  display: flex; align-items: center; gap: .65rem;
-}
-@keyframes toast-in {
-  from { opacity:0; transform:translateX(20px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-.toast.success { border-left: 3px solid var(--success); }
-.toast.error   { border-left: 3px solid var(--red); }
-.toast.info    { border-left: 3px solid var(--info); }
-.toast-icon { font-size: 1rem; flex-shrink: 0; }
-.toast-fade { opacity: 0; transition: opacity .3s; }
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--rink-navy);
+    color: #cfe0ee;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
 
-/* ── Print styles ────────────────────────────────────────── */
-@media print {
-  body { background: #fff; color: #111; }
-  #topbar, .actions-bar, .tab-nav, #toast-container, .modal-backdrop,
-  .btn-action, .btn-ghost, #auth-screen { display: none !important; }
-  .card { border: 1px solid #ccc; border-radius: 0; }
-  .print-section { display: block !important; }
-  .data-table th, .data-table td { color: #111; }
-}
-.print-section { display: none; }
+  .brand {
+    padding: 0 20px 20px 20px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #7d97ac;
+    border-bottom: 1px solid #1c3350;
+    margin-bottom: 12px;
+  }
 
-/* ── Misc ─────────────────────────────────────────────────── */
-.divider { height: 1px; background: var(--border); margin: 1rem 0; }
-.text-muted { color: var(--muted); }
-.text-red   { color: var(--red); }
-.text-sm    { font-size: .85rem; }
-.bold       { font-weight: 600; }
-.select-input {
-  background: var(--dark3); border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--text);
-  padding: .65rem .9rem; font-size: .95rem; width: 100%;
-  outline: none; transition: border-color .15s;
-  -webkit-appearance: none;
-}
-.select-input:focus { border-color: var(--red); }
-textarea.form-input { resize: vertical; min-height: 80px; }
-.section-heading {
-  font-family: var(--font-head); font-size: 1.2rem; font-weight: 700;
-  letter-spacing: .04em; text-transform: uppercase;
-  margin-bottom: .75rem;
-}
-.inline-badge {
-  font-size: .7rem; font-weight: 600; padding: .15rem .5rem;
-  border-radius: 99px; vertical-align: middle; margin-left: .4rem;
-}
+  .nav-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 11px 20px;
+    background: none;
+    border: none;
+    color: #b9cbd9;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .nav-item:hover { background: #16283f; color: #fff; }
+  .nav-item.active {
+    background: #16283f;
+    color: #fff;
+    box-shadow: inset 3px 0 0 var(--gold);
+  }
+
+  .sidebar-foot { margin-top: auto; padding: 12px 20px 0 20px; border-top: 1px solid #1c3350; }
+  .sidebar-foot .email { font-size: 12px; color: #7d97ac; margin-bottom: 8px; word-break: break-all; }
+
+  .main { flex: 1; min-width: 0; }
+
+  .nameplate {
+    background: linear-gradient(90deg, var(--team-primary), var(--team-primary) 70%, var(--team-secondary) 70%, var(--team-secondary) 100%);
+    padding: 22px 32px;
+    color: var(--team-secondary);
+  }
+  .nameplate .team-name { font-size: 28px; margin: 0; }
+  .nameplate .team-meta { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+
+  .content { padding: 28px 32px 60px 32px; max-width: 900px; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .section-head h2 { font-size: 20px; margin: 0; color: var(--rink-navy); }
+
+  .empty-state {
+    border: 1px dashed var(--ice-line);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--ice-line);
+  }
+  td { padding: 10px; border-bottom: 1px solid var(--ice-line); font-size: 14px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .num-cell {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    color: var(--steel);
+    width: 40px;
+  }
+
+  .row-actions { display: flex; gap: 8px; }
+  .row-actions button {
+    background: none; border: none; color: var(--steel);
+    cursor: pointer; font-size: 13px; padding: 2px 4px;
+  }
+  .row-actions button.remove { color: var(--danger); }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .pill.draft, .pill.open { background: #eef1e9; color: #5c6b3f; }
+  .pill.submitted, .pill.in_progress { background: #fdf1de; color: #93641c; }
+  .pill.confirmed, .pill.shipped { background: #e4eef6; color: #2d5b7c; }
+  .pill.completed, .pill.resolved { background: #e5f0ea; color: var(--ok); }
+
+  /* modal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(15, 32, 54, 0.45);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  .overlay.visible { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: var(--radius);
+    width: 520px;
+    max-width: 100%;
+    padding: 28px;
+  }
+  .modal h3 { margin: 0 0 20px 0; font-size: 18px; color: var(--rink-navy); }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+
+  .order-line {
+    display: grid;
+    grid-template-columns: 2fr 70px 90px 60px auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .order-line input, .order-line select { width: 100%; padding: 8px; border: 1px solid var(--ice-line); border-radius: var(--radius); }
+
+  select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--ice-line);
+    border-radius: var(--radius);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .swatch-row { display: flex; gap: 16px; margin-top: 4px; }
+  .swatch { display: flex; align-items: center; gap: 8px; }
+  .swatch .chip { width: 22px; height: 22px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
+  .swatch input[type=color] { width: 40px; height: 32px; padding: 0; border: 1px solid var(--ice-line); border-radius: 4px; }
+
+  .toggle-inactive { font-size: 13px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; cursor: pointer; }
 </style>
 </head>
 <body>
 
-<!-- ── Global Loader ─────────────────────────────────────── -->
-<div id="global-loader"><div class="loader-ring"></div></div>
-
-<!-- ── Toast Container ───────────────────────────────────── -->
-<div id="toast-container"></div>
-
-<!-- ── Auth Screen ───────────────────────────────────────── -->
+<!-- ================= AUTH SCREEN ================= -->
 <div id="auth-screen">
   <div class="auth-card">
-    <img src="https://shinnyofchampions.com/wp-content/uploads/2026/04/Shinny-of-Champions-png.png"
-         alt="Shinny of Champions" class="auth-logo">
-    <h1 class="auth-heading">GM PORTAL</h1>
-    <p class="auth-sub">Jersey management for team captains &amp; GMs</p>
-    <div class="form-group">
-      <label class="form-label" for="auth-email">Email</label>
-      <input type="email" id="auth-email" class="form-input" placeholder="you@example.com" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="auth-pass">Password</label>
-      <input type="password" id="auth-pass" class="form-input" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn-primary" id="auth-btn" onclick="doLogin()">Sign In</button>
-    <div id="auth-error" class="auth-error hidden"></div>
-    <p class="text-sm text-muted mt-4" style="text-align:center">
-      Need access? <a href="mailto:info@shinnyofchampions.com">Contact SOC</a>
-    </p>
+    <div class="auth-mark">SHINNY OF CHAMPIONS</div>
+    <h1>Team GM Portal</h1>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn full" type="submit" id="login-btn">Sign in</button>
+      <div class="form-msg" id="login-msg"></div>
+      <button type="button" class="link-btn" id="forgot-btn">Forgot your password?</button>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ice-line);">
+        <button type="button" class="link-btn" id="show-signup-btn">New here? Create your team →</button>
+      </div>
+    </form>
+
+    <form id="signup-form" style="display:none;">
+      <div class="field">
+        <label for="signup-team-name">Team name</label>
+        <input id="signup-team-name" required />
+      </div>
+      <div class="grid-2">
+        <div class="field"><label for="signup-division">Division</label><input id="signup-division" required /></div>
+        <div class="field"><label for="signup-season">Season</label><input id="signup-season" required /></div>
+      </div>
+      <div class="field">
+        <label for="signup-email">Your email</label>
+        <input id="signup-email" type="email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="signup-password">Choose a password</label>
+        <input id="signup-password" type="password" autocomplete="new-password" minlength="8" required />
+      </div>
+      <button class="btn full" type="submit" id="signup-btn">Create account</button>
+      <div class="form-msg" id="signup-msg"></div>
+      <button type="button" class="link-btn" id="show-login-btn" style="margin-top:12px;">← Back to sign in</button>
+    </form>
   </div>
 </div>
 
-<!-- ── Top Bar ───────────────────────────────────────────── -->
-<div id="topbar" class="hidden">
-  <div class="topbar-brand">
-    <img src="https://shinnyofchampions.com/wp-content/uploads/2026/04/Shinny-of-Champions-png.png"
-         alt="SOC" class="topbar-logo">
-    <span class="topbar-title">GM <span>PORTAL</span></span>
-  </div>
-  <div class="topbar-right">
-    <span class="team-badge" id="topbar-team-name">Loading...</span>
-    <button class="btn-ghost" onclick="doLogout()">Sign Out</button>
-  </div>
-</div>
+<!-- ================= APP SHELL ================= -->
+<div id="app">
+  <nav class="sidebar">
+    <div class="brand">SOC JERSEY PORTAL</div>
+    <div style="padding: 0 20px 16px 20px;">
+      <select id="team-switcher" style="width:100%; padding:8px; border-radius:4px; border:1px solid #1c3350; background:#16283f; color:#fff; font-size:13px;"></select>
+      <button type="button" class="link-btn" id="add-team-btn" style="color:#7d97ac; margin-top:8px;">+ Add another team</button>
+    </div>
+    <button class="nav-item active" data-tab="team">Team</button>
+    <button class="nav-item" data-tab="roster">Roster</button>
+    <button class="nav-item" data-tab="orders">Jersey Orders</button>
+    <button class="nav-item" data-tab="requests">Service Requests</button>
+    <div class="sidebar-foot">
+      <div class="email" id="user-email"></div>
+      <button class="btn ghost full" id="signout-btn">Sign out</button>
+    </div>
+  </nav>
 
-<!-- ── Main App ──────────────────────────────────────────── -->
-<div id="app" class="hidden">
+  <div class="main">
+    <div class="nameplate" id="nameplate">
+      <h1 class="team-name" id="team-name">—</h1>
+      <div class="team-meta" id="team-meta">—</div>
+    </div>
 
-  <!-- Dashboard grid -->
-  <div class="dash-grid">
-
-    <!-- Left: team profile card -->
-    <div>
-      <div class="card" id="team-profile-card">
-        <div class="card-header">
-          <span class="card-title">Team Profile</span>
-          <button class="btn-ghost" style="font-size:.75rem" onclick="openEditTeamModal()">Edit</button>
-        </div>
-        <div class="card-body">
-          <div class="team-profile" id="team-profile-content">
-            <div class="loader-ring" style="margin:1rem auto"></div>
+    <!-- TEAM TAB -->
+    <div class="content" id="tab-team">
+      <div class="section-head"><h2>Team profile</h2></div>
+      <div class="field">
+        <label>Team name</label>
+        <div id="detail-name">—</div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Division</label><div id="detail-division">—</div></div>
+        <div class="field"><label>Season</label><div id="detail-season">—</div></div>
+      </div>
+      <div class="field">
+        <label>Jersey colours</label>
+        <div class="swatch-row">
+          <div class="swatch">
+            <div class="chip" id="chip-primary"></div>
+            <input type="color" id="color-primary" />
           </div>
-        </div>
-      </div>
-
-      <!-- Quick actions -->
-      <div class="card mt-3" style="margin-top:1rem">
-        <div class="card-header"><span class="card-title">Quick Actions</span></div>
-        <div class="card-body">
-          <div style="display:flex; flex-direction:column; gap:.6rem">
-            <button class="btn-action primary" onclick="openAddPlayersModal()">
-              ＋ Add Players to Roster
-            </button>
-            <button class="btn-action" onclick="openNewOrderModal()">
-              🛒 Submit Jersey Order
-            </button>
-            <button class="btn-action" onclick="openReplacementModal()">
-              🔄 Replacement Request
-            </button>
-            <button class="btn-action" onclick="printOrderSummary()">
-              🖨 Print Order Summary
-            </button>
+          <div class="swatch">
+            <div class="chip" id="chip-secondary"></div>
+            <input type="color" id="color-secondary" />
           </div>
+          <button class="btn ghost" id="save-colours-btn">Save colours</button>
         </div>
       </div>
+      <div class="form-msg" id="team-msg"></div>
     </div>
 
-    <!-- Right: tabbed content -->
-    <div>
-      <div class="tab-nav">
-        <button class="tab-btn active" onclick="showTab('roster',this)">Roster</button>
-        <button class="tab-btn" onclick="showTab('orders',this)">Orders</button>
-        <button class="tab-btn" onclick="showTab('requests',this)">Requests</button>
+    <!-- ROSTER TAB -->
+    <div class="content" id="tab-roster" style="display:none;">
+      <div class="section-head">
+        <h2>Roster</h2>
+        <button class="btn" id="add-player-btn">Add player</button>
       </div>
+      <label class="toggle-inactive" style="margin-bottom:14px;">
+        <input type="checkbox" id="show-inactive" /> Show removed players
+      </label>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Size</th><th>Position</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="roster-body"></tbody>
+      </table>
+      <div class="empty-state" id="roster-empty" style="display:none;">No players on the roster yet. Add your first player to get started.</div>
+    </div>
 
-      <!-- Roster tab -->
-      <div id="tab-roster">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
-          <span class="section-heading" style="margin:0">Permanent Roster</span>
-          <button class="btn-action primary" style="flex:0; min-width:auto; padding:.5rem 1rem" onclick="openAddPlayersModal()">
-            ＋ Add Players
-          </button>
-        </div>
-        <div class="card">
-          <div class="data-table-wrap">
-            <table class="data-table" id="roster-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Position</th>
-                  <th>Jersey</th>
-                  <th>Socks</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="roster-tbody">
-                <tr><td colspan="5"><div class="loader-ring" style="margin:1.5rem auto"></div></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <!-- ORDERS TAB -->
+    <div class="content" id="tab-orders" style="display:none;">
+      <div class="section-head">
+        <h2>Jersey orders</h2>
+        <button class="btn" id="new-order-btn">New order</button>
       </div>
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Lines</th><th>Status</th></tr></thead>
+        <tbody id="orders-body"></tbody>
+      </table>
+      <div class="empty-state" id="orders-empty" style="display:none;">No orders yet. Start a new order once your roster is set.</div>
+    </div>
 
-      <!-- Orders tab -->
-      <div id="tab-orders" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
-          <span class="section-heading" style="margin:0">Order History</span>
-          <button class="btn-action primary" style="flex:0; min-width:auto; padding:.5rem 1rem" onclick="openNewOrderModal()">
-            ＋ New Order
-          </button>
-        </div>
-        <div id="orders-list">
-          <div class="loader-ring" style="margin:1.5rem auto"></div>
-        </div>
+    <!-- REQUESTS TAB -->
+    <div class="content" id="tab-requests" style="display:none;">
+      <div class="section-head">
+        <h2>Service requests</h2>
+        <button class="btn" id="new-request-btn">New request</button>
       </div>
-
-      <!-- Requests tab -->
-      <div id="tab-requests" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
-          <span class="section-heading" style="margin:0">Service Requests</span>
-          <div style="display:flex;gap:.5rem">
-            <button class="btn-action" style="flex:0;min-width:auto;padding:.5rem .9rem;font-size:.78rem" onclick="openReplacementModal()">🔄 Replace</button>
-          </div>
-        </div>
-        <div id="requests-list">
-          <div class="loader-ring" style="margin:1.5rem auto"></div>
-        </div>
-      </div>
+      <table>
+        <thead><tr><th>Date</th><th>Player</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
+        <tbody id="requests-body"></tbody>
+      </table>
+      <div class="empty-state" id="requests-empty" style="display:none;">No service requests on file.</div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════
-     MODALS
-════════════════════════════════════════════════════════ -->
-
-<!-- ── Add Players Modal ─────────────────────────────────── -->
-<div id="modal-add-players" class="modal-backdrop hidden">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <span class="modal-title">Add Players to Roster</span>
-      <button class="modal-close" onclick="closeModal('modal-add-players')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p class="text-sm text-muted" style="margin-bottom:1rem">Enter each new player below. Fields marked * are required.</p>
-      <div class="entry-hd" style="grid-template-columns:2fr 2fr 1fr 1.5fr 1.5fr 1.5fr auto">
-        <span class="entry-lbl">First Name *</span>
-        <span class="entry-lbl">Last Name *</span>
-        <span class="entry-lbl">#</span>
-        <span class="entry-lbl">Jersey Size</span>
-        <span class="entry-lbl">Sock Size</span>
-        <span class="entry-lbl">Position</span>
-        <span></span>
+<div class="overlay" id="team-overlay">
+  <div class="modal">
+    <h3>Add another team</h3>
+    <form id="team-form">
+      <div class="field"><label>Team name</label><input id="new-team-name" required /></div>
+      <div class="grid-2">
+        <div class="field"><label>Division</label><input id="new-team-division" required /></div>
+        <div class="field"><label>Season</label><input id="new-team-season" required /></div>
       </div>
-      <div id="add-players-rows"></div>
-      <button class="btn-add-row" onclick="addPlayerRow()">＋ Add Another Player</button>
+      <div class="form-msg" id="team-form-msg"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn ghost" id="team-form-cancel">Cancel</button>
+        <button type="submit" class="btn" id="team-form-save">Create team</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= ADMIN APP SHELL ================= -->
+<div id="admin-app">
+  <nav class="sidebar">
+    <div class="brand">SOC ADMIN</div>
+    <button class="nav-item active" data-admin-tab="teams">Teams</button>
+    <button class="nav-item" data-admin-tab="create">Add GM directly</button>
+    <div class="sidebar-foot">
+      <div class="email" id="admin-user-email"></div>
+      <button class="btn ghost full" id="admin-signout-btn">Sign out</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-add-players')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:.6rem 1.75rem" id="save-players-btn" onclick="savePlayers()">Add to Roster</button>
+  </nav>
+
+  <div class="main">
+    <div class="nameplate" style="background:var(--rink-navy); color:#fff;">
+      <h1 class="team-name">SOC Jersey Portal — Admin</h1>
+      <div class="team-meta">All teams &amp; account management</div>
+    </div>
+
+    <!-- TEAMS TAB -->
+    <div class="content admin-tab" id="admin-tab-teams">
+      <div class="section-head"><h2>All teams</h2></div>
+      <table>
+        <thead><tr><th>Team</th><th>Division</th><th>Season</th><th>GM email</th></tr></thead>
+        <tbody id="admin-teams-body"></tbody>
+      </table>
+      <div class="empty-state" id="admin-teams-empty" style="display:none;">No teams yet.</div>
+    </div>
+
+    <!-- CREATE GM TAB -->
+    <div class="content admin-tab" id="admin-tab-create" style="display:none;">
+      <div class="section-head"><h2>Add a GM account directly</h2></div>
+      <form id="create-gm-form" style="max-width:420px;">
+        <div class="field"><label>Team name</label><input id="gm-team-name" required /></div>
+        <div class="grid-2">
+          <div class="field"><label>Division</label><input id="gm-division" required /></div>
+          <div class="field"><label>Season</label><input id="gm-season" required /></div>
+        </div>
+        <div class="field"><label>GM email</label><input id="gm-email" type="email" required /></div>
+        <div class="field"><label>Temporary password</label><input id="gm-password" type="text" minlength="8" required /></div>
+        <button class="btn" type="submit" id="create-gm-save">Create account</button>
+        <div class="form-msg" id="create-gm-msg"></div>
+      </form>
     </div>
   </div>
 </div>
 
-<!-- ── New Order Modal ───────────────────────────────────── -->
-<div id="modal-new-order" class="modal-backdrop hidden">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <span class="modal-title">Submit Jersey Order</span>
-      <button class="modal-close" onclick="closeModal('modal-new-order')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p class="text-sm text-muted" style="margin-bottom:1.25rem">Select players from your roster and specify sizes. This order will be sent to SOC for confirmation.</p>
-      <div id="order-lines-container"></div>
-      <button class="btn-add-row" onclick="addOrderLine()">＋ Add Line</button>
-      <div class="divider"></div>
-      <div class="form-group">
-        <label class="form-label">Season</label>
-        <input type="text" id="order-season" class="form-input" placeholder="e.g. 2025-26" value="">
+<!-- ================= MODALS ================= -->
+<div class="overlay" id="player-overlay">
+  <div class="modal">
+    <h3 id="player-modal-title">Add player</h3>
+    <form id="player-form">
+      <input type="hidden" id="player-id" />
+      <div class="grid-2">
+        <div class="field"><label>First name</label><input id="player-first" required /></div>
+        <div class="field"><label>Last name</label><input id="player-last" required /></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Order Notes (optional)</label>
-        <textarea id="order-notes" class="form-input"></textarea>
+      <div class="grid-2">
+        <div class="field"><label>Jersey number</label><input id="player-number" type="number" min="0" max="99" required /></div>
+        <div class="field">
+          <label>Jersey size</label>
+          <select id="player-size">
+            <option>YS</option><option>YM</option><option>YL</option>
+            <option>AS</option><option>AM</option><option>AL</option>
+            <option>AXL</option><option>A2XL</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-new-order')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:.6rem 1.75rem" onclick="submitOrder()">Submit Order</button>
-    </div>
+      <div class="field">
+        <label>Position</label>
+        <select id="player-position">
+          <option value="">—</option>
+          <option>Forward</option><option>Defence</option><option>Goalie</option>
+        </select>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="player-notes"></textarea></div>
+      <div class="form-msg" id="player-msg"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn ghost" id="player-cancel">Cancel</button>
+        <button type="submit" class="btn" id="player-save">Save player</button>
+      </div>
+    </form>
   </div>
 </div>
 
-<!-- ── Replacement Modal ─────────────────────────────────── -->
-<div id="modal-replacement" class="modal-backdrop hidden">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <span class="modal-title">Replacement Request</span>
-      <button class="modal-close" onclick="closeModal('modal-replacement')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Player</label>
-        <select id="rep-player" class="select-input"></select>
+<div class="overlay" id="order-overlay">
+  <div class="modal" style="width:640px;">
+    <h3>New jersey order</h3>
+    <form id="order-form">
+      <div class="field">
+        <label>Order type</label>
+        <select id="order-type">
+          <option value="initial">Initial order</option>
+          <option value="reorder">Reorder</option>
+        </select>
       </div>
-      <div class="form-group">
-        <label class="form-label">Reason</label>
-        <select id="rep-reason" class="select-input">
-          <option value="lost">Lost jersey</option>
-          <option value="damaged">Damaged / torn</option>
-          <option value="wrong_name">Wrong name printed</option>
-          <option value="wrong_number">Wrong number printed</option>
+      <div class="field">
+        <label>Lines</label>
+        <div id="order-lines"></div>
+        <button type="button" class="link-btn" id="add-order-line" style="margin-top:6px;">+ Add line</button>
+      </div>
+      <div class="field"><label>Notes for SOC</label><textarea id="order-notes"></textarea></div>
+      <div class="form-msg" id="order-msg"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn ghost" id="order-cancel">Cancel</button>
+        <button type="submit" class="btn" id="order-save">Submit order</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="request-overlay">
+  <div class="modal">
+    <h3>New service request</h3>
+    <form id="request-form">
+      <div class="field">
+        <label>Player (optional)</label>
+        <select id="request-player"><option value="">— Not player-specific —</option></select>
+      </div>
+      <div class="field">
+        <label>Request type</label>
+        <select id="request-type">
+          <option value="size_swap">Size swap</option>
+          <option value="replacement">Replacement</option>
+          <option value="damage">Damaged jersey</option>
           <option value="other">Other</option>
         </select>
       </div>
-      <div class="form-group">
-        <label class="form-label">Size Needed</label>
-        <div class="size-grid" id="rep-sizes"></div>
+      <div class="field"><label>Description</label><textarea id="request-description" required></textarea></div>
+      <div class="form-msg" id="request-msg"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn ghost" id="request-cancel">Cancel</button>
+        <button type="submit" class="btn" id="request-save">Submit request</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Additional Notes</label>
-        <textarea id="rep-notes" class="form-input"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-replacement')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:.6rem 1.75rem" onclick="submitReplacement()">Submit Request</button>
-    </div>
+    </form>
   </div>
 </div>
 
-<!-- ── Order Detail Modal ────────────────────────────────── -->
-<div id="modal-order-detail" class="modal-backdrop hidden">
-  <div class="modal modal-md">
-    <div class="modal-header">
-      <span class="modal-title" id="order-detail-title">Order Details</span>
-      <button class="modal-close" onclick="closeModal('modal-order-detail')">&times;</button>
-    </div>
-    <div class="modal-body" id="order-detail-body"></div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-order-detail')">Close</button>
-      <button class="btn-action" style="flex:0" onclick="printOrderSummary()">🖨 Print</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     JAVASCRIPT
-════════════════════════════════════════════════════════ -->
 <script>
-// ── CONFIG ── Replace with your actual values ────────────────
+// ============================================================
+// CONFIG — fill these in after Supabase + Worker are deployed
+// ============================================================
 const CONFIG = {
-  supabaseUrl:  "https://fzdxtojugvcozafnalyn.supabase.co",
-  supabaseKey:  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6ZHh0b2p1Z3Zjb3phZm5hbHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjA1NjgsImV4cCI6MjA5NDg5NjU2OH0.aseNdvtqe-yH2uQ3JrumxrC1yP5ylT0nRDoZwq3Gbyo",    // anon key only - safe to expose
-  workerUrl:    "https://soc-jersey-portal-api.YOUR_SUBDOMAIN.workers.dev",
+  supabaseUrl: "https://YOUR_PROJECT.supabase.co",
+  supabaseKey: "YOUR_ANON_PUBLIC_KEY",   // anon key only — safe to expose
+  workerUrl:   "https://soc-jersey-portal-api.YOUR_SUBDOMAIN.workers.dev",
 };
 
-// ── Supabase minimal client ──────────────────────────────────
-const supa = (() => {
-  let _session = null;
+const sb = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
-  const headers = (extra = {}) => ({
-    "Content-Type": "application/json",
-    "apikey": CONFIG.supabaseKey,
-    ...((_session?.access_token) ? { Authorization: `Bearer ${_session.access_token}` } : {}),
-    ...extra,
-  });
-
-  const rest = async (table, opts = {}) => {
-    const { method = "GET", query = "", body, select } = opts;
-    let url = `${CONFIG.supabaseUrl}/rest/v1/${table}`;
-    const params = new URLSearchParams(query);
-    if (select) params.set("select", select);
-    const qs = params.toString();
-    if (qs) url += "?" + qs;
-    const res = await fetch(url, {
-      method,
-      headers: headers({ Prefer: method === "POST" ? "return=representation" : "" }),
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
-    }
-    return res.json().catch(() => null);
-  };
-
-  const auth = {
-    async signIn(email, password) {
-      const res = await fetch(`${CONFIG.supabaseUrl}/auth/v1/token?grant_type=password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": CONFIG.supabaseKey },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error_description || data.message || "Login failed");
-      _session = data;
-      localStorage.setItem("soc_session", JSON.stringify(data));
-      return data;
-    },
-    async refreshSession() {
-      const raw = localStorage.getItem("soc_session");
-      if (!raw) return null;
-      var stored; try { stored = JSON.parse(raw); } catch { return null; }
-      if (!stored.refresh_token) return null;
-      const res = await fetch(`${CONFIG.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": CONFIG.supabaseKey },
-        body: JSON.stringify({ refresh_token: stored.refresh_token }),
-      });
-      if (!res.ok) { localStorage.removeItem("soc_session"); return null; }
-      const data = await res.json();
-      _session = data;
-      localStorage.setItem("soc_session", JSON.stringify(data));
-      return data;
-    },
-    isExpired() {
-      if (!_session) return true;
-      var exp = _session.expires_at || 0;
-      return exp < (Date.now()/1000 + 60);
-    },
-    async signOut() {
-      await fetch(`${CONFIG.supabaseUrl}/auth/v1/logout`, {
-        method: "POST", headers: headers(),
-      }).catch(() => {});
-      _session = null;
-      localStorage.removeItem("soc_session");
-    },
-    restore() {
-      const raw = localStorage.getItem("soc_session");
-      if (raw) { try { _session = JSON.parse(raw); } catch {} }
-      return _session;
-    },
-    session() { return _session; },
-    userId() { return _session?.user?.id; },
-  };
-
-  return { rest, auth };
-})();
-
-// ── State ─────────────────────────────────────────────────────
-const STATE = {
+let state = {
+  session: null,
   team: null,
+  teams: [],
   players: [],
   orders: [],
   requests: [],
-  selectedOrderLines: [],
-  selectedRepSize: null,
-  selectedSwapSize: null,
 };
 
-const SIZES = ["YS","YM","YL","XS","S","M","L","XL","XXL","XXXL"];
-const POSITIONS = ["Player","Goalie"];
+// ------------------------------------------------------------
+// Auth
+// ------------------------------------------------------------
+const authScreen = document.getElementById('auth-screen');
+const appEl = document.getElementById('app');
+const adminAppEl = document.getElementById('admin-app');
 
-// ── Init ─────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", async () => {
-  const session = supa.auth.restore();
-  if (session) {
-    await bootApp();
-  } else {
-    hideLoader();
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const msg = document.getElementById('login-msg');
+  msg.textContent = ''; msg.className = 'form-msg';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign in';
+
+  if (error) {
+    msg.textContent = error.message;
+    msg.className = 'form-msg error';
+    return;
   }
+  await onSignedIn(data.session);
 });
 
-function hideLoader() {
-  const l = document.getElementById("global-loader");
-  l.classList.add("fade-out");
-  setTimeout(() => l.remove(), 400);
-}
-
-async function bootApp() {
-  try {
-    if (supa.auth.isExpired()) {
-      const refreshed = await supa.auth.refreshSession();
-      if (!refreshed) { supa.auth.signOut(); hideLoader(); return; }
-    }
-    await loadTeam();
-    showApp();
-    loadRoster();
-    loadOrders();
-    loadRequests();
-  } catch (e) {
-    console.error(e);
-    supa.auth.signOut();
-    hideLoader();
-    showToast("Session expired - please sign in again.", "error");
-  }
-}
-
-function showApp() {
-  document.getElementById("auth-screen").classList.add("hidden");
-  document.getElementById("topbar").classList.remove("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  hideLoader();
-}
-
-// ── Auth ─────────────────────────────────────────────────────
-async function doLogin() {
-  const email = document.getElementById("auth-email").value.trim();
-  const pass  = document.getElementById("auth-pass").value;
-  const btn   = document.getElementById("auth-btn");
-  const err   = document.getElementById("auth-error");
-  err.classList.add("hidden");
-  btn.disabled = true; btn.textContent = "Signing in...";
-  try {
-    await supa.auth.signIn(email, pass);
-    await bootApp();
-  } catch (e) {
-    err.textContent = e.message;
-    err.classList.remove("hidden");
-    btn.disabled = false; btn.textContent = "Sign In";
-  }
-}
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !document.getElementById("auth-screen").classList.contains("hidden")) {
-    doLogin();
-  }
+document.getElementById('show-signup-btn').addEventListener('click', () => {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('signup-form').style.display = 'block';
+});
+document.getElementById('show-login-btn').addEventListener('click', () => {
+  document.getElementById('signup-form').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
 });
 
-async function doLogout() {
-  await supa.auth.signOut();
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('signup-btn');
+  const msg = document.getElementById('signup-msg');
+  msg.textContent = ''; msg.className = 'form-msg';
+  btn.disabled = true; btn.textContent = 'Creating account…';
+
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const team_name = document.getElementById('signup-team-name').value.trim();
+  const division = document.getElementById('signup-division').value.trim();
+  const season = document.getElementById('signup-season').value.trim();
+
+  try {
+    const res = await fetch(CONFIG.workerUrl + '/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, team_name, division, season }),
+    });
+    const out = await res.json();
+    if (!res.ok || out.error) throw new Error(out.error || 'Could not create your account.');
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    await onSignedIn(data.session);
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'form-msg error';
+  }
+  btn.disabled = false; btn.textContent = 'Create account';
+});
+
+document.getElementById('forgot-btn').addEventListener('click', async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const msg = document.getElementById('login-msg');
+  if (!email) {
+    msg.textContent = 'Enter your email above first, then click "Forgot password?" again.';
+    msg.className = 'form-msg error';
+    return;
+  }
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  msg.textContent = error ? error.message : 'Password reset email sent — check your inbox.';
+  msg.className = 'form-msg ' + (error ? 'error' : 'ok');
+});
+
+document.getElementById('signout-btn').addEventListener('click', async () => {
+  await sb.auth.signOut();
   location.reload();
-}
+});
 
-// ── Load Team ─────────────────────────────────────────────────
-async function loadTeam() {
-  const data = await supa.rest("teams", {
-    query: `gm_user_id=eq.${supa.auth.userId()}&limit=1`,
-    select: "*",
-  });
-  if (!data || data.length === 0) throw new Error("No team found for this account");
-  STATE.team = data[0];
-  renderTeamProfile();
-  document.getElementById("topbar-team-name").textContent = STATE.team.name;
-}
+async function onSignedIn(session) {
+  state.session = session;
 
-function renderTeamProfile() {
-  const t = STATE.team;
-  const el = document.getElementById("team-profile-content");
-  el.innerHTML = `
-    <div class="team-name-big">${esc(t.name)}</div>
-    <div class="team-meta-row">
-      <div class="team-meta-item">🏒 <strong>${esc(t.division)}</strong></div>
-      <div class="team-meta-item">📅 <strong>${esc(t.season)}</strong></div>
-      ${t.colour_primary ? `<div class="team-meta-item">
-        <span class="colour-swatch" style="background:${esc(t.colour_primary)}"></span>
-        <span>${esc(t.colour_primary)}</span>
-        ${t.colour_secondary ? `<span class="colour-swatch" style="background:${esc(t.colour_secondary)}"></span><span>${esc(t.colour_secondary)}</span>` : ""}
-      </div>` : ""}
-    </div>
-    <div class="stat-row" id="stat-row">
-      <div class="stat-box"><div class="stat-num" id="stat-players">—</div><div class="stat-lbl">Players</div></div>
-      <div class="stat-box"><div class="stat-num" id="stat-orders">—</div><div class="stat-lbl">Orders</div></div>
-    </div>
-  `;
-}
+  const { data: adminRow } = await sb.from('admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
 
-// ── Roster ────────────────────────────────────────────────────
-async function loadRoster() {
-  const data = await supa.rest("players", {
-    query: `team_id=eq.${STATE.team.id}&active=eq.true&order=last_name.asc`,
-    select: "*",
-  });
-  STATE.players = data || [];
+  if (adminRow) {
+    authScreen.style.display = 'none';
+    adminAppEl.classList.add('visible');
+    document.getElementById('admin-user-email').textContent = session.user.email;
+    await loadAdminTeams();
+    renderAdminTeams();
+    return;
+  }
+
+  const { data: teams, error } = await sb.from('teams').select('*').order('created_at', { ascending: true });
+  if (error || !teams || teams.length === 0) {
+    document.getElementById('login-msg').textContent =
+      'Signed in, but no team is linked to this account yet. Try creating one from the sign-up screen.';
+    document.getElementById('login-msg').className = 'form-msg error';
+    await sb.auth.signOut();
+    return;
+  }
+  state.teams = teams;
+  state.team = teams[0];
+
+  authScreen.style.display = 'none';
+  appEl.classList.add('visible');
+
+  document.getElementById('user-email').textContent = session.user.email;
+  renderTeamSwitcher();
+  renderNameplate();
+  await Promise.all([loadPlayers(), loadOrders(), loadRequests()]);
   renderRoster();
-  const el = document.getElementById("stat-players");
-  if (el) el.textContent = STATE.players.length;
-}
-
-function renderRoster() {
-  var tbody = document.getElementById("roster-tbody");
-  if (!STATE.players.length) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🏒</div><h3>No players yet</h3><p>Use Add Players to build your roster</p></div></td></tr>';
-    return;
-  }
-  var rows = "";
-  STATE.players.forEach(function(p) {
-    var pos = p.position || "";
-    var posClass = pos === "Goalie" ? "pos-G" : pos === "Player" ? "pos-F" : "pos-N";
-    var posHtml = pos ? "<span class=\"pos-badge " + posClass + "\">" + esc(pos) + "</span>" : "<span class=\"pos-badge pos-N\">—</span>";
-    rows += "<tr>" +
-      "<td><span class=\"num\">" + esc(p.number || "—") + "</span></td>" +
-      "<td><strong>" + esc(p.first_name) + " " + esc(p.last_name) + "</strong></td>" +
-      "<td>" + posHtml + "</td>" +
-      "<td class=\"text-sm\">" + esc(p.jersey_size || "—") + "</td>" +
-      "<td class=\"text-sm\">" + esc(p.sock_size || "—") + "</td>" +
-      "<td><button class=\"btn-icon\" data-pid=\"" + p.id + "\" onclick=\"deactivatePlayer(this.dataset.pid)\">🗑</button></td>" +
-      "</tr>";
-  });
-  tbody.innerHTML = rows;
-}
-
-async function deactivatePlayer(id) {
-  if (!confirm("Remove this player from the active roster?")) return;
-  await supa.rest(`players?id=eq.${id}`, { method: "PATCH", body: { active: false } });
-  await loadRoster();
-  showToast("Player removed from active roster.", "info");
-}
-
-// ── Orders ────────────────────────────────────────────────────
-async function loadOrders() {
-  const data = await supa.rest("jersey_orders", {
-    query: `team_id=eq.${STATE.team.id}&order=submitted_at.desc`,
-    select: "*",
-  });
-  STATE.orders = data || [];
   renderOrders();
-  const el = document.getElementById("stat-orders");
-  if (el) el.textContent = STATE.orders.length;
-}
-
-function renderOrders() {
-  const container = document.getElementById("orders-list");
-  if (!STATE.orders.length) {
-    container.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">📋</div>
-      <h3>No orders yet</h3>
-      <p>Submit your first jersey order to get started</p>
-    </div>`;
-    return;
-  }
-  container.innerHTML = STATE.orders.map(o => `
-    <div class="card" style="margin-bottom:.75rem">
-      <div class="card-body" style="padding:.9rem 1.1rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
-          <div>
-            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-              <strong style="font-family:var(--font-head);font-size:1rem">Order #${o.id.substring(0,8).toUpperCase()}</strong>
-              <span class="status-pill s-${o.status}">${statusLabel(o.status)}</span>
-            </div>
-            <div class="text-sm text-muted mt-1">${o.season} · Submitted ${fmtDate(o.submitted_at)}</div>
-          </div>
-          <button class="btn-ghost" onclick="showOrderDetail('${o.id}')">View Details</button>
-        </div>
-        ${o.notes ? `<div class="text-sm text-muted mt-2" style="font-style:italic">${esc(o.notes)}</div>` : ""}
-      </div>
-    </div>
-  `).join("");
-}
-
-// ── Requests ──────────────────────────────────────────────────
-async function loadRequests() {
-  const data = await supa.rest("service_requests", {
-    query: `team_id=eq.${STATE.team.id}&order=submitted_at.desc`,
-    select: "*",
-  });
-  STATE.requests = data || [];
   renderRequests();
 }
 
-function renderRequests() {
-  const container = document.getElementById("requests-list");
-  if (!STATE.requests.length) {
-    container.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🔄</div>
-      <h3>No requests yet</h3>
-      <p>Submit a size swap or replacement request above</p>
-    </div>`;
-    return;
-  }
-  container.innerHTML = STATE.requests.map(r => {
-    const typeLabel = { size_swap:"Size Swap", replacement:"Replacement", name_change:"Name Change", number_change:"Number Change", other:"Other" }[r.type] || r.type;
-    return `
-    <div class="card" style="margin-bottom:.75rem">
-      <div class="card-body" style="padding:.9rem 1.1rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
-          <div>
-            <div style="display:flex;align-items:center;gap:.6rem">
-              <strong>${typeLabel}</strong>
-              <span class="status-pill s-${r.status}">${statusLabel(r.status)}</span>
-            </div>
-            <div class="text-sm text-muted mt-1">
-              ${r.player_name ? esc(r.player_name) + " · " : ""}
-              ${fmtDate(r.submitted_at)}
-            </div>
-            ${r.soc_notes ? `<div class="text-sm mt-1" style="color:var(--warn)">SOC: ${esc(r.soc_notes)}</div>` : ""}
-          </div>
-        </div>
-        ${r.details?.notes ? `<div class="text-sm text-muted mt-2" style="font-style:italic">${esc(r.details.notes)}</div>` : ""}
-      </div>
-    </div>`;
-  }).join("");
+function renderTeamSwitcher() {
+  const sel = document.getElementById('team-switcher');
+  sel.innerHTML = state.teams.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+  sel.value = state.team.id;
 }
 
-// ── Tabs ─────────────────────────────────────────────────────
-function showTab(name, btn) {
-  ["roster","orders","requests"].forEach(t => {
-    document.getElementById(`tab-${t}`).classList.add("hidden");
-  });
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById(`tab-${name}`).classList.remove("hidden");
-  btn.classList.add("active");
+document.getElementById('team-switcher').addEventListener('change', async (e) => {
+  state.team = state.teams.find(t => t.id === e.target.value);
+  renderNameplate();
+  await Promise.all([loadPlayers(), loadOrders(), loadRequests()]);
+  renderRoster();
+  renderOrders();
+  renderRequests();
+});
+
+const teamOverlay = document.getElementById('team-overlay');
+document.getElementById('add-team-btn').addEventListener('click', () => {
+  document.getElementById('team-form').reset();
+  document.getElementById('team-form-msg').textContent = '';
+  teamOverlay.classList.add('visible');
+});
+document.getElementById('team-form-cancel').addEventListener('click', () => teamOverlay.classList.remove('visible'));
+
+document.getElementById('team-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('team-form-msg');
+  const { data, error } = await sb.from('teams').insert({
+    name: document.getElementById('new-team-name').value.trim(),
+    division: document.getElementById('new-team-division').value.trim(),
+    season: document.getElementById('new-team-season').value.trim(),
+    gm_user_id: state.session.user.id,
+  }).select().single();
+
+  if (error) { msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+
+  state.teams.push(data);
+  state.team = data;
+  teamOverlay.classList.remove('visible');
+  renderTeamSwitcher();
+  renderNameplate();
+  await Promise.all([loadPlayers(), loadOrders(), loadRequests()]);
+  renderRoster();
+  renderOrders();
+  renderRequests();
+});
+
+// Restore session on reload
+sb.auth.getSession().then(({ data }) => {
+  if (data.session) onSignedIn(data.session);
+});
+
+// ------------------------------------------------------------
+// Nameplate + team profile
+// ------------------------------------------------------------
+function renderNameplate() {
+  const t = state.team;
+  document.documentElement.style.setProperty('--team-primary', t.colour_primary);
+  document.documentElement.style.setProperty('--team-secondary', t.colour_secondary);
+  document.getElementById('team-name').textContent = t.name;
+  document.getElementById('team-meta').textContent = `${t.division} · ${t.season}`;
+  document.getElementById('detail-name').textContent = t.name;
+  document.getElementById('detail-division').textContent = t.division;
+  document.getElementById('detail-season').textContent = t.season;
+  document.getElementById('chip-primary').style.background = t.colour_primary;
+  document.getElementById('chip-secondary').style.background = t.colour_secondary;
+  document.getElementById('color-primary').value = t.colour_primary;
+  document.getElementById('color-secondary').value = t.colour_secondary;
 }
 
-// ── Add Players Modal ─────────────────────────────────────────
-function openAddPlayersModal() {
-  document.getElementById("add-players-rows").innerHTML = "";
-  addPlayerRow(); addPlayerRow(); // start with 2 rows
-  openModal("modal-add-players");
-}
+document.getElementById('save-colours-btn').addEventListener('click', async () => {
+  const primary = document.getElementById('color-primary').value;
+  const secondary = document.getElementById('color-secondary').value;
+  const msg = document.getElementById('team-msg');
 
-function addPlayerRow() {
-  var container = document.getElementById("add-players-rows");
-  var div = document.createElement("div");
-  div.className = "player-row-entry";
-  div.style.gridTemplateColumns = "2fr 2fr 1fr 1.5fr 1.5fr 1.5fr auto";
-  var sizeOpts = '<option value="">—</option>' + SIZES.map(function(s){ return '<option value="' + s + '">' + s + '</option>'; }).join("");
-  var posOpts = '<option value="">—</option>' + POSITIONS.map(function(p){ return '<option value="' + p + '">' + p + '</option>'; }).join("");
-  div.innerHTML =
-    '<input type="text" class="entry-input p-first" placeholder="First name">' +
-    '<input type="text" class="entry-input p-last" placeholder="Last name">' +
-    '<input type="text" class="entry-input p-num" placeholder="#" maxlength="3">' +
-    '<select class="entry-input p-jersey-size">' + sizeOpts + '</select>' +
-    '<select class="entry-input p-sock-size">' + sizeOpts + '</select>' +
-    '<select class="entry-input p-pos">' + posOpts + '</select>' +
-    '<button class="btn-icon" onclick="this.closest(\".player-row-entry\").remove()" title="Remove row">✕</button>';
-  container.appendChild(div);
-}
+  const { data, error } = await sb.from('teams')
+    .update({ colour_primary: primary, colour_secondary: secondary })
+    .eq('id', state.team.id)
+    .select().single();
 
-async function savePlayers() {
-  const rows = document.querySelectorAll(".player-row-entry");
-  const players = [];
-  rows.forEach(function(row) {
-    var first = row.querySelector(".p-first").value.trim();
-    var last  = row.querySelector(".p-last").value.trim();
-    if (!first && !last) return;
-    players.push({
-      team_id:      STATE.team.id,
-      first_name:   first,
-      last_name:    last,
-      number:       row.querySelector(".p-num").value.trim() || null,
-      position:     row.querySelector(".p-pos").value || null,
-      jersey_size:  row.querySelector(".p-jersey-size") ? (row.querySelector(".p-jersey-size").value || null) : null,
-      sock_size:    row.querySelector(".p-sock-size") ? (row.querySelector(".p-sock-size").value || null) : null,
+  if (error) { msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+  state.team = data;
+  const idx = state.teams.findIndex(t => t.id === data.id);
+  if (idx !== -1) state.teams[idx] = data;
+  renderNameplate();
+  msg.textContent = 'Colours saved.'; msg.className = 'form-msg ok';
+});
+
+// ------------------------------------------------------------
+// Tab navigation
+// ------------------------------------------------------------
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['team', 'roster', 'orders', 'requests'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = (t === btn.dataset.tab) ? 'block' : 'none';
     });
-  });
-  if (!players.length) { showToast("Enter at least one player.", "error"); return; }
-  const btn = document.getElementById("save-players-btn");
-  btn.disabled = true; btn.textContent = "Saving...";
-  try {
-    for (const p of players) {
-      await supa.rest("players", { method: "POST", body: p });
-    }
-    closeModal("modal-add-players");
-    await loadRoster();
-    showToast(`${players.length} player${players.length > 1 ? "s" : ""} added to roster!`, "success");
-    await notifySOC({ type: "roster_update", teamName: STATE.team.name, teamId: STATE.team.id, count: players.length });
-  } catch (e) {
-    showToast("Error saving players: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.textContent = "Add to Roster";
-  }
-}
-
-// ── New Order Modal ───────────────────────────────────────────
-function openNewOrderModal() {
-  document.getElementById("order-lines-container").innerHTML = "";
-  document.getElementById("order-season").value = STATE.team.season || "";
-  document.getElementById("order-notes").value = "";
-  addOrderLine();
-  openModal("modal-new-order");
-}
-
-function addOrderLine() {
-  const container = document.getElementById("order-lines-container");
-  const div = document.createElement("div");
-  div.style.cssText = "display:grid;grid-template-columns:2fr 1fr 2fr 1fr auto;gap:.5rem;align-items:center;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)";
-  const playerOpts = STATE.players.map(p =>
-    `<option value="${p.id}">${esc(p.first_name)} ${esc(p.last_name)} ${p.number ? "#"+p.number : ""}</option>`
-  ).join("");
-  div.innerHTML = `
-    <select class="entry-input ol-player">
-      <option value="">Select player...</option>
-      ${playerOpts}
-    </select>
-    <input type="text" class="entry-input ol-num" placeholder="# (jersey)">
-    <select class="entry-input ol-size">
-      <option value="">Size...</option>
-      ${SIZES.map(s => `<option value="${s}">${s}</option>`).join("")}
-    </select>
-    <select class="entry-input ol-style">
-      <option value="Home">Home</option>
-      <option value="Away">Away</option>
-      <option value="Practice">Practice</option>
-    </select>
-    <button class="btn-icon" onclick="this.closest('div').remove()">✕</button>
-  `;
-  container.appendChild(div);
-}
-
-async function submitOrder() {
-  const lines = document.querySelectorAll("#order-lines-container > div");
-  const orderLines = [];
-  lines.forEach(row => {
-    const pid   = row.querySelector(".ol-player").value;
-    const size  = row.querySelector(".ol-size").value;
-    if (!size) return;
-    const player = STATE.players.find(p => p.id === pid);
-    orderLines.push({
-      player_id:   pid || null,
-      player_name: player ? `${player.first_name} ${player.last_name}` : "Unknown",
-      number:      row.querySelector(".ol-num").value.trim() || (player?.number || null),
-      size,
-      style:       row.querySelector(".ol-style").value,
-      qty:         1,
-    });
-  });
-  if (!orderLines.length) { showToast("Add at least one player with a size selected.", "error"); return; }
-  try {
-    const order = await supa.rest("jersey_orders", {
-      method: "POST",
-      body: {
-        team_id: STATE.team.id,
-        season:  document.getElementById("order-season").value.trim(),
-        notes:   document.getElementById("order-notes").value.trim() || null,
-      },
-    });
-    const orderId = order[0].id;
-    for (const line of orderLines) {
-      await supa.rest("order_lines", { method: "POST", body: { ...line, order_id: orderId } });
-    }
-    closeModal("modal-new-order");
-    await loadOrders();
-    showToast("Order submitted! SOC has been notified.", "success");
-    await notifySOC({ type: "new_order", teamName: STATE.team.name, teamId: STATE.team.id, orderId, qty: orderLines.length });
-  } catch (e) {
-    showToast("Error submitting order: " + e.message, "error");
-  }
-}
-
-// ── Replacement Modal ─────────────────────────────────────────
-function openReplacementModal() {
-  const sel = document.getElementById("rep-player");
-  sel.innerHTML = `<option value="">Select player...</option>` +
-    STATE.players.map(p => `<option value="${p.id}">${esc(p.first_name)} ${esc(p.last_name)}</option>`).join("");
-  const sizeEl = document.getElementById("rep-sizes");
-  STATE.selectedRepSize = null;
-  sizeEl.innerHTML = SIZES.map(s => `
-    <div class="size-chip" onclick="selectRepSize(this,'${s}')">${s}</div>
-  `).join("");
-  document.getElementById("rep-notes").value = "";
-  openModal("modal-replacement");
-}
-
-function selectRepSize(el, size) {
-  document.querySelectorAll("#rep-sizes .size-chip").forEach(c => c.classList.remove("active"));
-  el.classList.add("active");
-  STATE.selectedRepSize = size;
-}
-
-async function submitReplacement() {
-  const pid    = document.getElementById("rep-player").value;
-  const reason = document.getElementById("rep-reason").value;
-  const notes  = document.getElementById("rep-notes").value.trim();
-  const size   = STATE.selectedRepSize;
-  if (!pid) { showToast("Please select a player.", "error"); return; }
-  const player = STATE.players.find(p => p.id === pid);
-  try {
-    await supa.rest("service_requests", {
-      method: "POST",
-      body: {
-        team_id:     STATE.team.id,
-        type:        "replacement",
-        player_id:   pid,
-        player_name: player ? `${player.first_name} ${player.last_name}` : null,
-        details:     { reason, size_needed: size, notes },
-      },
-    });
-    closeModal("modal-replacement");
-    await loadRequests();
-    showToast("Replacement request submitted!", "success");
-    await notifySOC({ type: "service_request", subtype: "replacement", teamName: STATE.team.name, teamId: STATE.team.id });
-  } catch (e) {
-    showToast("Error: " + e.message, "error");
-  }
-}
-
-// ── Order Detail ─────────────────────────────────────────────
-async function showOrderDetail(orderId) {
-  const order = STATE.orders.find(o => o.id === orderId);
-  if (!order) return;
-  const lines = await supa.rest("order_lines", {
-    query: `order_id=eq.${orderId}&order=player_name.asc`,
-    select: "*",
-  });
-  document.getElementById("order-detail-title").textContent =
-    `Order #${orderId.substring(0,8).toUpperCase()}`;
-  document.getElementById("order-detail-body").innerHTML = `
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
-      <div><div class="text-sm text-muted">Status</div>
-        <span class="status-pill s-${order.status}">${statusLabel(order.status)}</span></div>
-      <div><div class="text-sm text-muted">Season</div><strong>${esc(order.season)}</strong></div>
-      <div><div class="text-sm text-muted">Submitted</div><strong>${fmtDate(order.submitted_at)}</strong></div>
-    </div>
-    ${order.notes ? `<p class="text-sm text-muted" style="margin-bottom:1rem;font-style:italic">${esc(order.notes)}</p>` : ""}
-    <table class="data-table">
-      <thead><tr>
-        <th>Player</th><th>#</th><th>Size</th><th>Style</th>
-      </tr></thead>
-      <tbody>
-        ${(lines||[]).map(l => `<tr>
-          <td>${esc(l.player_name)}</td>
-          <td><span class="num">${esc(l.number||"—")}</span></td>
-          <td><strong>${esc(l.size)}</strong></td>
-          <td class="text-muted text-sm">${esc(l.style)}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-    <div class="text-sm text-muted mt-3">${(lines||[]).length} line item${(lines||[]).length !== 1 ? "s" : ""}</div>
-  `;
-  openModal("modal-order-detail");
-}
-
-// ── Print ─────────────────────────────────────────────────────
-function printOrderSummary() {
-  window.print();
-}
-
-// ── Notify SOC (via Cloudflare Worker) ───────────────────────
-async function notifySOC(payload) {
-  try {
-    await fetch(`${CONFIG.workerUrl}/api/notify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${supa.auth.session()?.access_token || ""}`,
-      },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) {
-    console.warn("Notification failed (non-critical):", e.message);
-  }
-}
-
-// ── Modal Helpers ─────────────────────────────────────────────
-function openModal(id) {
-  document.getElementById(id).classList.remove("hidden");
-  document.body.style.overflow = "hidden";
-}
-function closeModal(id) {
-  document.getElementById(id).classList.add("hidden");
-  document.body.style.overflow = "";
-}
-// Close on backdrop click
-document.querySelectorAll(".modal-backdrop").forEach(b => {
-  b.addEventListener("click", e => {
-    if (e.target === b) closeModal(b.id);
   });
 });
 
-// ── Toast ─────────────────────────────────────────────────────
-function showToast(msg, type = "info") {
-  const icon = { success:"✅", error:"❌", info:"ℹ️" }[type] || "ℹ️";
-  const t = document.createElement("div");
-  t.className = `toast ${type}`;
-  t.innerHTML = `<span class="toast-icon">${icon}</span><span>${esc(msg)}</span>`;
-  document.getElementById("toast-container").appendChild(t);
-  setTimeout(() => { t.classList.add("toast-fade"); setTimeout(() => t.remove(), 300); }, 3500);
+// ------------------------------------------------------------
+// Admin: sign out + tab nav
+// ------------------------------------------------------------
+document.getElementById('admin-signout-btn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  location.reload();
+});
+
+document.querySelectorAll('[data-admin-tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#admin-app .nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
+    document.getElementById('admin-tab-' + btn.dataset.adminTab).style.display = 'block';
+  });
+});
+
+// ------------------------------------------------------------
+// Admin: all teams
+// ------------------------------------------------------------
+let adminTeams = [];
+
+async function loadAdminTeams() {
+  const { data, error } = await sb.from('teams').select('*').order('created_at', { ascending: false });
+  if (!error) adminTeams = data;
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-function esc(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-function fmtDate(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-CA", { year:"numeric", month:"short", day:"numeric" });
-}
-function statusLabel(s) {
-  return {
-    pending:"Pending", confirmed:"Confirmed", in_production:"In Production",
-    shipped:"Shipped", delivered:"Delivered", cancelled:"Cancelled",
-    open:"Open", in_review:"In Review", resolved:"Resolved", denied:"Denied",
-  }[s] || s;
+function renderAdminTeams() {
+  const body = document.getElementById('admin-teams-body');
+  body.innerHTML = '';
+  document.getElementById('admin-teams-empty').style.display = adminTeams.length ? 'none' : 'block';
+  adminTeams.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.division)}</td><td>${escapeHtml(t.season)}</td><td>${escapeHtml(t.gm_email || '—')}</td>`;
+    body.appendChild(tr);
+  });
 }
 
-// ── Edit Team ────────────────────────────────────────────────
-function openEditTeamModal() {
-  var t = STATE.team;
-  document.getElementById("edit-team-name").value = t.name || "";
-  document.getElementById("edit-team-division").value = t.division || "";
-  document.getElementById("edit-team-season").value = t.season || "";
-  document.getElementById("edit-team-colour1").value = t.colour_primary || "#c0392b";
-  document.getElementById("edit-team-colour2").value = t.colour_secondary || "#1a1a1a";
-  openModal("modal-edit-team");
-}
+// ------------------------------------------------------------
+// Admin: create GM directly
+// ------------------------------------------------------------
+document.getElementById('create-gm-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('create-gm-msg');
+  const btn = document.getElementById('create-gm-save');
+  msg.textContent = ''; msg.className = 'form-msg';
+  btn.disabled = true; btn.textContent = 'Creating…';
 
-async function saveTeamSettings() {
-  var body = {
-    name:             document.getElementById("edit-team-name").value.trim(),
-    division:         document.getElementById("edit-team-division").value.trim(),
-    season:           document.getElementById("edit-team-season").value.trim(),
-    colour_primary:   document.getElementById("edit-team-colour1").value,
-    colour_secondary: document.getElementById("edit-team-colour2").value,
-  };
-  if (!body.name) { showToast("Team name is required.", "error"); return; }
-  var btn = document.getElementById("save-team-btn");
-  btn.disabled = true; btn.textContent = "Saving...";
   try {
-    await supa.rest("teams?id=eq." + STATE.team.id, { method: "PATCH", body: body });
-    Object.assign(STATE.team, body);
-    renderTeamProfile();
-    document.getElementById("topbar-team-name").textContent = STATE.team.name;
-    closeModal("modal-edit-team");
-    showToast("Team settings saved!", "success");
-  } catch(e) {
-    showToast("Error saving: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.textContent = "Save Changes";
+    const res = await fetch(CONFIG.workerUrl + '/api/admin/create-gm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${state.session.access_token}`,
+      },
+      body: JSON.stringify({
+        data: {
+          team_name: document.getElementById('gm-team-name').value.trim(),
+          division: document.getElementById('gm-division').value.trim(),
+          season: document.getElementById('gm-season').value.trim(),
+          email: document.getElementById('gm-email').value.trim(),
+          password: document.getElementById('gm-password').value,
+        },
+      }),
+    });
+    const out = await res.json();
+    if (!res.ok || out.error) throw new Error(out.error || 'Could not create account.');
+
+    msg.textContent = 'GM account and team created.'; msg.className = 'form-msg ok';
+    document.getElementById('create-gm-form').reset();
+    await loadAdminTeams();
+    renderAdminTeams();
+  } catch (err) {
+    msg.textContent = err.message; msg.className = 'form-msg error';
   }
+  btn.disabled = false; btn.textContent = 'Create account';
+});
+
+// ------------------------------------------------------------
+// Roster
+// ------------------------------------------------------------
+async function loadPlayers() {
+  const { data, error } = await sb.from('players')
+    .select('*')
+    .eq('team_id', state.team.id)
+    .order('jersey_number', { ascending: true });
+  if (!error) state.players = data;
+}
+
+function renderRoster() {
+  const showInactive = document.getElementById('show-inactive').checked;
+  const rows = state.players.filter(p => showInactive || p.active);
+  const body = document.getElementById('roster-body');
+  body.innerHTML = '';
+  document.getElementById('roster-empty').style.display = rows.length ? 'none' : 'block';
+
+  rows.forEach(p => {
+    const tr = document.createElement('tr');
+    if (!p.active) tr.style.opacity = '0.5';
+    tr.innerHTML = `
+      <td class="num-cell">${p.jersey_number}</td>
+      <td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td>
+      <td>${p.jersey_size}</td>
+      <td>${p.position || '—'}</td>
+      <td>${p.notes ? escapeHtml(p.notes) : '—'}</td>
+      <td class="row-actions">
+        <button data-edit="${p.id}">Edit</button>
+        ${p.active ? `<button class="remove" data-remove="${p.id}">Remove</button>` : `<button data-restore="${p.id}">Restore</button>`}
+      </td>`;
+    body.appendChild(tr);
+  });
+
+  body.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openPlayerModal(b.dataset.edit)));
+  body.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => setPlayerActive(b.dataset.remove, false)));
+  body.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', () => setPlayerActive(b.dataset.restore, true)));
+}
+
+document.getElementById('show-inactive').addEventListener('change', renderRoster);
+
+async function setPlayerActive(id, active) {
+  const { error } = await sb.from('players').update({ active }).eq('id', id);
+  if (!error) { await loadPlayers(); renderRoster(); }
+}
+
+const playerOverlay = document.getElementById('player-overlay');
+document.getElementById('add-player-btn').addEventListener('click', () => openPlayerModal(null));
+document.getElementById('player-cancel').addEventListener('click', () => playerOverlay.classList.remove('visible'));
+
+function openPlayerModal(id) {
+  const msg = document.getElementById('player-msg');
+  msg.textContent = ''; msg.className = 'form-msg';
+  const form = document.getElementById('player-form');
+  form.reset();
+  document.getElementById('player-id').value = id || '';
+  document.getElementById('player-modal-title').textContent = id ? 'Edit player' : 'Add player';
+
+  if (id) {
+    const p = state.players.find(x => x.id === id);
+    document.getElementById('player-first').value = p.first_name;
+    document.getElementById('player-last').value = p.last_name;
+    document.getElementById('player-number').value = p.jersey_number;
+    document.getElementById('player-size').value = p.jersey_size;
+    document.getElementById('player-position').value = p.position || '';
+    document.getElementById('player-notes').value = p.notes || '';
+  }
+  playerOverlay.classList.add('visible');
+}
+
+document.getElementById('player-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('player-msg');
+  const id = document.getElementById('player-id').value;
+
+  const payload = {
+    team_id: state.team.id,
+    first_name: document.getElementById('player-first').value.trim(),
+    last_name: document.getElementById('player-last').value.trim(),
+    jersey_number: parseInt(document.getElementById('player-number').value, 10),
+    jersey_size: document.getElementById('player-size').value,
+    position: document.getElementById('player-position').value || null,
+    notes: document.getElementById('player-notes').value.trim() || null,
+  };
+
+  const query = id
+    ? sb.from('players').update(payload).eq('id', id)
+    : sb.from('players').insert(payload);
+
+  const { error } = await query;
+  if (error) { msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+
+  playerOverlay.classList.remove('visible');
+  await loadPlayers();
+  renderRoster();
+});
+
+// ------------------------------------------------------------
+// Orders
+// ------------------------------------------------------------
+async function loadOrders() {
+  const { data: orders, error } = await sb.from('jersey_orders')
+    .select('*, order_lines(*)')
+    .eq('team_id', state.team.id)
+    .order('created_at', { ascending: false });
+  if (!error) state.orders = orders;
+}
+
+function renderOrders() {
+  const body = document.getElementById('orders-body');
+  body.innerHTML = '';
+  document.getElementById('orders-empty').style.display = state.orders.length ? 'none' : 'block';
+
+  state.orders.forEach(o => {
+    const tr = document.createElement('tr');
+    const date = new Date(o.created_at).toLocaleDateString();
+    tr.innerHTML = `
+      <td>${date}</td>
+      <td>${o.order_type === 'reorder' ? 'Reorder' : 'Initial'}</td>
+      <td>${(o.order_lines || []).length}</td>
+      <td><span class="pill ${o.status}">${o.status}</span></td>`;
+    body.appendChild(tr);
+  });
+}
+
+const orderOverlay = document.getElementById('order-overlay');
+document.getElementById('order-cancel').addEventListener('click', () => orderOverlay.classList.remove('visible'));
+
+document.getElementById('new-order-btn').addEventListener('click', () => {
+  document.getElementById('order-form').reset();
+  document.getElementById('order-lines').innerHTML = '';
+  document.getElementById('order-msg').textContent = '';
+  addOrderLine();
+  orderOverlay.classList.add('visible');
+});
+
+document.getElementById('add-order-line').addEventListener('click', () => addOrderLine());
+
+function addOrderLine(prefill) {
+  const container = document.getElementById('order-lines');
+  const row = document.createElement('div');
+  row.className = 'order-line';
+
+  const playerOptions = state.players.filter(p => p.active).map(p =>
+    `<option value="${p.id}" data-number="${p.jersey_number}" data-size="${p.jersey_size}" data-name="${escapeHtml(p.first_name + ' ' + p.last_name)}">${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</option>`
+  ).join('');
+
+  row.innerHTML = `
+    <select class="line-player">
+      <option value="">Custom line —</option>
+      ${playerOptions}
+    </select>
+    <input class="line-number" type="number" min="0" max="99" placeholder="#" value="${prefill?.jersey_number || ''}" />
+    <select class="line-size">
+      <option>YS</option><option>YM</option><option>YL</option>
+      <option>AS</option><option>AM</option><option>AL</option>
+      <option>AXL</option><option>A2XL</option>
+    </select>
+    <input class="line-qty" type="number" min="1" value="1" />
+    <button type="button" class="link-btn remove-line">Remove</button>
+  `;
+
+  row.querySelector('.line-player').addEventListener('change', (e) => {
+    const opt = e.target.selectedOptions[0];
+    if (opt.value) {
+      row.querySelector('.line-number').value = opt.dataset.number;
+      row.querySelector('.line-size').value = opt.dataset.size;
+      row.dataset.nameOnJersey = opt.dataset.name;
+    } else {
+      row.dataset.nameOnJersey = '';
+    }
+  });
+  row.querySelector('.remove-line').addEventListener('click', () => row.remove());
+
+  container.appendChild(row);
+}
+
+document.getElementById('order-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('order-msg');
+  const btn = document.getElementById('order-save');
+
+  const lines = [...document.querySelectorAll('#order-lines .order-line')].map(row => {
+    const playerSel = row.querySelector('.line-player');
+    const opt = playerSel.selectedOptions[0];
+    return {
+      player_id: playerSel.value || null,
+      name_on_jersey: opt.value ? opt.dataset.name : (row.querySelector('.line-number').value ? `Player #${row.querySelector('.line-number').value}` : 'Unnamed'),
+      jersey_number: parseInt(row.querySelector('.line-number').value, 10),
+      jersey_size: row.querySelector('.line-size').value,
+      quantity: parseInt(row.querySelector('.line-qty').value, 10) || 1,
+      line_type: 'new',
+    };
+  }).filter(l => !isNaN(l.jersey_number));
+
+  if (lines.length === 0) {
+    msg.textContent = 'Add at least one valid line.'; msg.className = 'form-msg error';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    const res = await callWorker('/api/proxy', {
+      action: 'submit_order',
+      team_id: state.team.id,
+      data: {
+        order_type: document.getElementById('order-type').value,
+        notes: document.getElementById('order-notes').value.trim(),
+        lines,
+      },
+    });
+    if (!res.ok) throw new Error(res.error || 'Submission failed');
+    orderOverlay.classList.remove('visible');
+    await loadOrders();
+    renderOrders();
+  } catch (err) {
+    msg.textContent = err.message; msg.className = 'form-msg error';
+  }
+  btn.disabled = false; btn.textContent = 'Submit order';
+});
+
+// ------------------------------------------------------------
+// Service requests
+// ------------------------------------------------------------
+async function loadRequests() {
+  const { data, error } = await sb.from('service_requests')
+    .select('*, players(first_name, last_name)')
+    .eq('team_id', state.team.id)
+    .order('created_at', { ascending: false });
+  if (!error) state.requests = data;
+}
+
+function renderRequests() {
+  const body = document.getElementById('requests-body');
+  body.innerHTML = '';
+  document.getElementById('requests-empty').style.display = state.requests.length ? 'none' : 'block';
+
+  state.requests.forEach(r => {
+    const tr = document.createElement('tr');
+    const date = new Date(r.created_at).toLocaleDateString();
+    const player = r.players ? `${r.players.first_name} ${r.players.last_name}` : '—';
+    tr.innerHTML = `
+      <td>${date}</td>
+      <td>${escapeHtml(player)}</td>
+      <td>${labelForRequestType(r.request_type)}</td>
+      <td>${escapeHtml(r.description)}</td>
+      <td><span class="pill ${r.status}">${r.status.replace('_', ' ')}</span></td>`;
+    body.appendChild(tr);
+  });
+}
+
+function labelForRequestType(t) {
+  return { size_swap: 'Size swap', replacement: 'Replacement', damage: 'Damaged', other: 'Other' }[t] || t;
+}
+
+const requestOverlay = document.getElementById('request-overlay');
+document.getElementById('request-cancel').addEventListener('click', () => requestOverlay.classList.remove('visible'));
+
+document.getElementById('new-request-btn').addEventListener('click', () => {
+  document.getElementById('request-form').reset();
+  document.getElementById('request-msg').textContent = '';
+  const sel = document.getElementById('request-player');
+  sel.innerHTML = '<option value="">— Not player-specific —</option>' +
+    state.players.filter(p => p.active).map(p => `<option value="${p.id}">${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</option>`).join('');
+  requestOverlay.classList.add('visible');
+});
+
+document.getElementById('request-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('request-msg');
+  const btn = document.getElementById('request-save');
+
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    const res = await callWorker('/api/proxy', {
+      action: 'submit_service_request',
+      team_id: state.team.id,
+      data: {
+        player_id: document.getElementById('request-player').value || null,
+        request_type: document.getElementById('request-type').value,
+        description: document.getElementById('request-description').value.trim(),
+      },
+    });
+    if (!res.ok) throw new Error(res.error || 'Submission failed');
+    requestOverlay.classList.remove('visible');
+    await loadRequests();
+    renderRequests();
+  } catch (err) {
+    msg.textContent = err.message; msg.className = 'form-msg error';
+  }
+  btn.disabled = false; btn.textContent = 'Submit request';
+});
+
+// ------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------
+async function callWorker(path, body) {
+  const res = await fetch(CONFIG.workerUrl + path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${state.session.access_token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
 }
 </script>
-
-<!-- ── Edit Team Modal ──────────────────────────────────── -->
-<div id="modal-edit-team" class="modal-backdrop hidden">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <span class="modal-title">Team Settings</span>
-      <button class="modal-close" onclick="closeModal('modal-edit-team')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Team Name *</label>
-        <input type="text" id="edit-team-name" class="form-input" placeholder="e.g. Ice Wolves">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Division</label>
-        <input type="text" id="edit-team-division" class="form-input" placeholder="e.g. Tier 2 Beginner+">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Season</label>
-        <input type="text" id="edit-team-season" class="form-input" placeholder="e.g. 2025-26">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-        <div class="form-group">
-          <label class="form-label">Primary Colour</label>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <input type="color" id="edit-team-colour1" value="#c0392b"
-              style="width:40px;height:36px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;padding:2px">
-            <input type="text" id="edit-team-colour1-hex" class="form-input" placeholder="#c0392b"
-              style="flex:1" oninput="document.getElementById('edit-team-colour1').value=this.value">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Secondary Colour</label>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <input type="color" id="edit-team-colour2" value="#1a1a1a"
-              style="width:40px;height:36px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;padding:2px">
-            <input type="text" id="edit-team-colour2-hex" class="form-input" placeholder="#1a1a1a"
-              style="flex:1" oninput="document.getElementById('edit-team-colour2').value=this.value">
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-edit-team')">Cancel</button>
-      <button class="btn-primary" id="save-team-btn" style="width:auto;padding:.6rem 1.75rem" onclick="saveTeamSettings()">Save Changes</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>

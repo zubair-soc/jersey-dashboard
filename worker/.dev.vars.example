@@ -1,0 +1,11 @@
+# Copy this file to .dev.vars (same folder) and fill in your DEV Supabase
+# project's values. .dev.vars is git-ignored — `wrangler dev` reads it
+# automatically for local runs, so you never need to run
+# `wrangler secret put` until you're deploying for real.
+
+SUPABASE_URL=https://YOUR_DEV_PROJECT.supabase.co
+SUPABASE_SERVICE_KEY=your-dev-project-service-role-key
+NOTIFY_EMAIL=you@example.com
+
+# Optional — leave unset to skip sending real emails while testing:
+# RESEND_API_KEY=

@@ -27,26 +27,30 @@ Browser (jerseys.shinnyofchampions.com)
 
 ---
 
-## Step 2 — Create GM Accounts
+## Step 2 — Bootstrap the First Admin
 
-For each team GM:
-1. Go to Supabase → Authentication → Users → Invite user
-2. After they sign up, note their User UUID
-3. Insert their team record:
+Sign-up itself is fully open: anyone can create an account and a team
+straight from the portal, no code or approval needed — that's the point,
+so teams can hop on and start tracking rosters immediately. Only the
+**Admin** role (for SOC oversight — seeing every team, adding a GM
+account on someone's behalf) needs a one-time manual bootstrap:
+
+1. Supabase → Authentication → Users → Invite user (invite yourself).
+2. Copy that user's UUID from the Users table.
+3. In the SQL editor:
 
 ```sql
-INSERT INTO teams (name, division, season, gm_user_id, colour_primary, colour_secondary)
-VALUES (
-  'Ice Wolves',
-  'Tier 2 Beginner+',
-  '2025-26',
-  '<user-uuid-from-auth>',
-  '#c0392b',
-  '#1a1a1a'
-);
+insert into admins (user_id, email)
+values ('<user-uuid-from-auth>', 'admin@example.com');
 ```
 
-One team per GM account. Each GM can only see their own team's data (enforced by RLS).
+Sign in to the portal with that account and you'll land on the **Admin**
+screen instead of a team dashboard, where you can see every team and add
+other admins the same way.
+
+A GM account can own more than one team (some GMs run multiple squads) —
+they can add another team any time from the "+ Add another team" control
+in the sidebar, and switch between them with the team dropdown.
 
 ---
 
@@ -157,4 +161,6 @@ soc-jersey-portal/
 
 ## Adding More GMs / Teams
 
-Repeat Step 2 for each new GM. Each user sees only their team. SOC admins can view all data via the Supabase dashboard or a future admin panel.
+Nothing to do — sign-up is self-serve from the portal's "New here? Create
+your team" screen. The Admin screen's "Add GM directly" is there for cases
+where SOC wants to set an account up on someone's behalf instead.
