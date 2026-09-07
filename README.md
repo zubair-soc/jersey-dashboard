@@ -8,13 +8,15 @@
 ```
 Browser (jerseys.shinnyofchampions.com)
     │
-    ├─── Supabase (auth + database, RLS enforced)
-    │       Uses anon key (safe to expose)
-    │
-    └─── Cloudflare Worker (soc-jersey-portal-api.*.workers.dev)
-            Holds service_role key (never exposed)
-            Routes: /api/notify, /api/proxy
+    └─── Supabase
+            ├── Auth + database (RLS enforced) — uses anon key (safe to expose)
+            └── Edge Function "portal-api" — holds service_role key (never
+                exposed), auto-injected by Supabase itself
+                Routes: /signup, /admin/create-gm, /proxy, /notify
 ```
+
+Everything lives in one Supabase project and its dashboard — no separate
+backend host, no separate secrets manager.
 
 ---
 
@@ -54,28 +56,32 @@ in the sidebar, and switch between them with the team dropdown.
 
 ---
 
-## Step 3 — Cloudflare Worker
+## Step 3 — Deploy the Edge Function (no CLI needed)
 
-```bash
-cd worker
-npm install -g wrangler
-wrangler login
+1. In your Supabase project, go to **Edge Functions** in the left sidebar.
+2. Click **Deploy a new function → Via Editor**.
+3. Name it `portal-api` (must match this exactly — the frontend's
+   `CONFIG.workerUrl` assumes this name).
+4. Delete the placeholder code and paste in the entire contents of
+   `supabase/functions/portal-api/index.ts`. Click **Deploy**.
+5. Open the function's **Settings** and turn **Verify JWT off**. This is
+   required — `/signup` is called by people who don't have a session yet,
+   and Supabase's gateway would otherwise reject that request before your
+   code even runs. Every other route still checks the Authorization
+   header itself in code, so this doesn't open anything up.
+6. Go to **Edge Functions → Secrets** (project-wide, shared by all
+   functions) and add:
+   - `NOTIFY_EMAIL` → your SOC admin email
+   - `RESEND_API_KEY` → optional, see "Email Notifications" below
 
-# Set secrets (never commit these):
-wrangler secret put SUPABASE_URL
-# → paste: https://xxxx.supabase.co
+   You do **not** need to set `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY`
+   — Supabase injects those automatically for every Edge Function in the
+   project.
 
-wrangler secret put SUPABASE_SERVICE_KEY
-# → paste: service_role key from Supabase Settings → API
-
-wrangler secret put NOTIFY_EMAIL
-# → paste: your SOC admin email
-
-# Deploy:
-wrangler deploy
+Your function's URL is:
 ```
-
-Note the worker URL (e.g. `https://soc-jersey-portal-api.YOUR_SUBDOMAIN.workers.dev`)
+https://YOUR_PROJECT.supabase.co/functions/v1/portal-api
+```
 
 ---
 
@@ -87,7 +93,7 @@ Edit `frontend/index.html`, update the CONFIG block near the bottom:
 const CONFIG = {
   supabaseUrl:  "https://YOUR_PROJECT.supabase.co",
   supabaseKey:  "YOUR_ANON_PUBLIC_KEY",   // anon key only
-  workerUrl:    "https://soc-jersey-portal-api.YOUR_SUBDOMAIN.workers.dev",
+  workerUrl:    "https://YOUR_PROJECT.supabase.co/functions/v1/portal-api",
 };
 ```
 
@@ -98,13 +104,11 @@ const CONFIG = {
 ### Option A: Subdomain on existing host
 Upload `frontend/index.html` to `jerseys.shinnyofchampions.com` root.
 
-### Option B: Cloudflare Pages (recommended - free)
-```bash
-cd frontend
-npx wrangler pages deploy . --project-name soc-jersey-portal
-```
-Then set a custom domain in Cloudflare Pages settings:
-`jerseys.shinnyofchampions.com` → add CNAME in DNS
+### Option B: Cloudflare Pages (recommended — free, no CLI needed)
+In the Cloudflare dashboard: Workers & Pages → Create application →
+drag-and-drop your `frontend/index.html` file → Deploy. Then attach
+`jerseys.shinnyofchampions.com` as a custom domain in that project's
+settings.
 
 ---
 
@@ -121,12 +125,13 @@ Then set a custom domain in Cloudflare Pages settings:
 
 ## Email Notifications (Optional)
 
-The Worker has a stub for Resend. To enable:
+The function has a stub for Resend. To enable:
 
 1. Sign up at https://resend.com (free tier: 3,000 emails/month)
 2. Get your API key
-3. `wrangler secret put RESEND_API_KEY`
-4. Uncomment the Resend block in `worker/worker.js`
+3. Add it as `RESEND_API_KEY` under Edge Functions → Secrets
+4. Redeploy the function (Deploy a new function → Via Editor, paste the
+   same code again) so it picks up the new secret
 
 ---
 
@@ -136,11 +141,13 @@ The Worker has a stub for Resend. To enable:
 soc-jersey-portal/
 ├── frontend/
 │   └── index.html          ← entire portal, single file
-├── worker/
-│   ├── worker.js           ← Cloudflare Worker (API proxy)
-│   └── wrangler.toml       ← deployment config
+├── supabase/
+│   └── functions/
+│       └── portal-api/
+│           └── index.ts    ← Supabase Edge Function (API)
 ├── db/
-│   └── schema.sql          ← Supabase tables + RLS policies
+│   ├── schema.sql          ← Supabase tables + RLS policies
+│   └── migrations/         ← one-time catch-up scripts for live projects
 └── README.md
 ```
 

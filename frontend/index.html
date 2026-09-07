@@ -595,7 +595,7 @@
 const CONFIG = {
   supabaseUrl: "https://YOUR_PROJECT.supabase.co",
   supabaseKey: "YOUR_ANON_PUBLIC_KEY",   // anon key only — safe to expose
-  workerUrl:   "https://soc-jersey-portal-api.YOUR_SUBDOMAIN.workers.dev",
+  workerUrl:   "https://YOUR_PROJECT.supabase.co/functions/v1/portal-api",
 };
 
 const sb = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
@@ -660,7 +660,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   try {
     const res = await fetch(CONFIG.workerUrl + '/api/signup', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
       body: JSON.stringify({ email, password, team_name }),
     });
     const out = await res.json();
@@ -905,6 +905,7 @@ document.getElementById('create-gm-form').addEventListener('submit', async (e) =
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        apikey: CONFIG.supabaseKey,
         Authorization: `Bearer ${state.session.access_token}`,
       },
       body: JSON.stringify({
@@ -1231,6 +1232,7 @@ async function callWorker(path, body) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      apikey: CONFIG.supabaseKey,
       Authorization: `Bearer ${state.session.access_token}`,
     },
     body: JSON.stringify(body),

@@ -1,9 +1,0 @@
-name = "soc-jersey-portal-api"
-main = "worker.js"
-compatibility_date = "2025-01-01"
-
-# Secrets are set via `wrangler secret put <NAME>` — never stored here:
-#   SUPABASE_URL
-#   SUPABASE_SERVICE_KEY
-#   NOTIFY_EMAIL
-#   RESEND_API_KEY   (optional)
