@@ -342,6 +342,7 @@
 <div id="app">
   <nav class="sidebar">
     <div class="brand">SOC JERSEY PORTAL</div>
+    <button type="button" class="link-btn" id="back-to-admin-btn" style="display:none; color:#e3a23c; padding:0 20px 12px 20px; text-align:left; width:100%;">← Back to Admin</button>
     <div style="padding: 0 20px 16px 20px;">
       <select id="team-switcher" style="width:100%; padding:8px; border-radius:4px; border:1px solid #1c3350; background:#16283f; color:#fff; font-size:13px;"></select>
       <button type="button" class="link-btn" id="add-team-btn" style="color:#7d97ac; margin-top:8px;">+ Add another team</button>
@@ -475,7 +476,7 @@
     <div class="content admin-tab" id="admin-tab-teams">
       <div class="section-head"><h2>All teams</h2></div>
       <table>
-        <thead><tr><th>Team</th><th>Division</th><th>Season</th><th>GM email</th></tr></thead>
+        <thead><tr><th>Team</th><th>Division</th><th>Season</th><th>GM email</th><th></th></tr></thead>
         <tbody id="admin-teams-body"></tbody>
       </table>
       <div class="empty-state" id="admin-teams-empty" style="display:none;">No teams yet.</div>
@@ -945,10 +946,57 @@ function renderAdminTeams() {
   document.getElementById('admin-teams-empty').style.display = adminTeams.length ? 'none' : 'block';
   adminTeams.forEach(t => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.division || '—')}</td><td>${escapeHtml(t.season || '—')}</td><td>${escapeHtml(t.gm_email || '—')}</td>`;
+    tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.division || '—')}</td><td>${escapeHtml(t.season || '—')}</td><td>${escapeHtml(t.gm_email || '—')}</td>
+      <td class="row-actions">
+        <button data-manage="${t.id}">Manage</button>
+        <button class="remove" data-delete="${t.id}">Delete</button>
+      </td>`;
     body.appendChild(tr);
   });
+
+  body.querySelectorAll('[data-manage]').forEach(b => b.addEventListener('click', () => {
+    const team = adminTeams.find(t => t.id === b.dataset.manage);
+    manageTeamAsAdmin(team);
+  }));
+  body.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', async () => {
+    const team = adminTeams.find(t => t.id === b.dataset.delete);
+    if (!confirm(`Delete "${team.name}" and all of its roster, orders, and requests? This can't be undone.`)) return;
+    const { error } = await sb.from('teams').delete().eq('id', team.id);
+    if (error) { alert(error.message); return; }
+    await loadAdminTeams();
+    renderAdminTeams();
+  }));
 }
+
+// Lets an admin open a team's full dashboard (same UI a GM sees) to
+// manage its roster, orders, and requests directly.
+async function manageTeamAsAdmin(team) {
+  state.team = team;
+  state.teams = [team];
+  state.isAdminViewingTeam = true;
+
+  adminAppEl.classList.remove('visible');
+  appEl.classList.add('visible');
+
+  document.getElementById('back-to-admin-btn').style.display = 'block';
+  document.getElementById('add-team-btn').style.display = 'none';
+  document.getElementById('user-email').textContent = `${state.session.user.email} (admin)`;
+
+  renderTeamSwitcher();
+  renderNameplate();
+  await Promise.all([loadPlayers(), loadOrders(), loadRequests()]);
+  renderRoster();
+  renderOrders();
+  renderRequests();
+}
+
+document.getElementById('back-to-admin-btn').addEventListener('click', async () => {
+  state.isAdminViewingTeam = false;
+  appEl.classList.remove('visible');
+  adminAppEl.classList.add('visible');
+  await loadAdminTeams();
+  renderAdminTeams();
+});
 
 // ------------------------------------------------------------
 // Admin: create GM directly
