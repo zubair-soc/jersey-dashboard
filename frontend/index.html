@@ -398,7 +398,6 @@
     <div class="content" id="tab-roster" style="display:none;">
       <div class="section-head">
         <h2>Roster</h2>
-        <button class="btn" id="add-player-btn">Add player</button>
       </div>
       <button type="button" class="link-btn" id="size-chart-btn" style="margin-bottom:14px;">View size chart</button>
       <br>
@@ -407,8 +406,28 @@
       </label>
       <table>
         <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Sock</th><th>Position</th><th>Notes</th><th></th></tr></thead>
+        <tbody>
+          <tr id="add-player-row">
+            <td><input type="number" id="add-number" min="0" max="99" placeholder="#" style="width:48px;" /></td>
+            <td style="display:flex; gap:4px;">
+              <input type="text" id="add-first" placeholder="First" style="width:70px;" />
+              <input type="text" id="add-last" placeholder="Last" style="width:70px;" />
+            </td>
+            <td><select id="add-jersey-size"></select></td>
+            <td><select id="add-sock-size"><option value="">—</option></select></td>
+            <td>
+              <select id="add-position">
+                <option value="">—</option>
+                <option>Forward</option><option>Defence</option><option>Goalie</option>
+              </select>
+            </td>
+            <td><input type="text" id="add-notes" placeholder="Notes" style="width:100%;" /></td>
+            <td><button type="button" class="btn" id="add-player-inline-btn" style="padding:6px 12px; font-size:13px;">Add</button></td>
+          </tr>
+        </tbody>
         <tbody id="roster-body"></tbody>
       </table>
+      <div class="form-msg error" id="add-player-msg"></div>
       <div class="empty-state" id="roster-empty" style="display:none;">No players on the roster yet. Add your first player to get started.</div>
     </div>
 
@@ -1043,6 +1062,9 @@ document.getElementById('create-gm-form').addEventListener('submit', async (e) =
 document.getElementById('player-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
 document.getElementById('player-sock-size').innerHTML =
   '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
+document.getElementById('add-jersey-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
+document.getElementById('add-sock-size').innerHTML =
+  '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
 
 const sizeChartOverlay = document.getElementById('size-chart-overlay');
 document.getElementById('size-chart-btn').addEventListener('click', () => sizeChartOverlay.classList.add('visible'));
@@ -1096,8 +1118,63 @@ async function setPlayerActive(id, active) {
 }
 
 const playerOverlay = document.getElementById('player-overlay');
-document.getElementById('add-player-btn').addEventListener('click', () => openPlayerModal(null));
 document.getElementById('player-cancel').addEventListener('click', () => playerOverlay.classList.remove('visible'));
+
+// ------------------------------------------------------------
+// Inline "type and go" row for adding players
+// ------------------------------------------------------------
+const addPlayerRow = document.getElementById('add-player-row');
+addPlayerRow.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addPlayerInline(); }
+  });
+});
+document.getElementById('add-player-inline-btn').addEventListener('click', addPlayerInline);
+
+async function addPlayerInline() {
+  const numberEl = document.getElementById('add-number');
+  const firstEl = document.getElementById('add-first');
+  const lastEl = document.getElementById('add-last');
+  const sizeEl = document.getElementById('add-jersey-size');
+  const sockEl = document.getElementById('add-sock-size');
+  const posEl = document.getElementById('add-position');
+  const notesEl = document.getElementById('add-notes');
+  const msg = document.getElementById('add-player-msg');
+  msg.textContent = '';
+
+  if (!numberEl.value || !firstEl.value.trim() || !lastEl.value.trim()) {
+    msg.textContent = 'Jersey number, first name, and last name are required.';
+    numberEl.value ? (lastEl.value.trim() ? firstEl.focus() : lastEl.focus()) : numberEl.focus();
+    return;
+  }
+
+  const payload = {
+    team_id: state.team.id,
+    first_name: firstEl.value.trim(),
+    last_name: lastEl.value.trim(),
+    jersey_number: parseInt(numberEl.value, 10),
+    jersey_size: sizeEl.value,
+    sock_size: sockEl.value || null,
+    position: posEl.value || null,
+    notes: notesEl.value.trim() || null,
+  };
+
+  const { error } = await sb.from('players').insert(payload);
+  if (error) { msg.textContent = error.message; return; }
+
+  // Clear the row and keep focus there, ready for the next player
+  numberEl.value = '';
+  firstEl.value = '';
+  lastEl.value = '';
+  sockEl.value = '';
+  posEl.value = '';
+  notesEl.value = '';
+  sizeEl.selectedIndex = 0;
+
+  await loadPlayers();
+  renderRoster();
+  numberEl.focus();
+}
 
 function openPlayerModal(id) {
   const msg = document.getElementById('player-msg');
