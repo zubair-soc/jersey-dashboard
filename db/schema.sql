@@ -11,8 +11,8 @@ create extension if not exists "pgcrypto";
 create table if not exists teams (
   id                uuid primary key default gen_random_uuid(),
   name              text not null,
-  division          text not null,
-  season            text not null,
+  division          text,                 -- optional; can be set later on the Team tab
+  season            text,                 -- optional; can be set later on the Team tab
   gm_user_id        uuid not null references auth.users(id) on delete cascade,
   gm_email          text,                 -- auto-filled by trigger below, not client-writable
   colour_primary    text not null default '#1a1a1a',

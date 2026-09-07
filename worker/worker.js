@@ -194,15 +194,15 @@ async function notify(env, team, type, payload) {
 /** Public route: open sign-up. Creates a new GM account + their first team. */
 async function handleSignup(body, env) {
   const { email, password, team_name, division, season } = body;
-  if (!email || !password || !team_name || !division || !season) {
-    throw new Error("Email, password, team name, division, and season are all required.");
+  if (!email || !password || !team_name) {
+    throw new Error("Email, password, and team name are all required.");
   }
 
   const user = await createAuthUser(email, password, env);
 
   const [team] = await supabaseInsert(
     "teams",
-    [{ name: team_name, division, season, gm_user_id: user.id }],
+    [{ name: team_name, division: division || null, season: season || null, gm_user_id: user.id }],
     env
   );
 
@@ -212,15 +212,15 @@ async function handleSignup(body, env) {
 /** Admin-only: create a GM account + team directly, no invite code needed. */
 async function handleAdminCreateGm(data, env) {
   const { email, password, team_name, division, season } = data;
-  if (!email || !password || !team_name || !division || !season) {
-    throw new Error("email, password, team_name, division, and season are all required.");
+  if (!email || !password || !team_name) {
+    throw new Error("email, password, and team_name are required.");
   }
 
   const user = await createAuthUser(email, password, env);
 
   const [team] = await supabaseInsert(
     "teams",
-    [{ name: team_name, division, season, gm_user_id: user.id }],
+    [{ name: team_name, division: division || null, season: season || null, gm_user_id: user.id }],
     env
   );
 

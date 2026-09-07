@@ -323,10 +323,6 @@
         <label for="signup-team-name">Team name</label>
         <input id="signup-team-name" required />
       </div>
-      <div class="grid-2">
-        <div class="field"><label for="signup-division">Division</label><input id="signup-division" required /></div>
-        <div class="field"><label for="signup-season">Season</label><input id="signup-season" required /></div>
-      </div>
       <div class="field">
         <label for="signup-email">Your email</label>
         <input id="signup-email" type="email" autocomplete="username" required />
@@ -371,11 +367,14 @@
       <div class="section-head"><h2>Team profile</h2></div>
       <div class="field">
         <label>Team name</label>
-        <div id="detail-name">—</div>
+        <input id="detail-name" />
       </div>
       <div class="grid-2">
-        <div class="field"><label>Division</label><div id="detail-division">—</div></div>
-        <div class="field"><label>Season</label><div id="detail-season">—</div></div>
+        <div class="field"><label>Division</label><input id="detail-division" placeholder="Optional" /></div>
+        <div class="field"><label>Season</label><input id="detail-season" placeholder="Optional" /></div>
+      </div>
+      <div class="field">
+        <button class="btn ghost" id="save-details-btn">Save name / division / season</button>
       </div>
       <div class="field">
         <label>Jersey colours</label>
@@ -443,10 +442,6 @@
     <h3>Add another team</h3>
     <form id="team-form">
       <div class="field"><label>Team name</label><input id="new-team-name" required /></div>
-      <div class="grid-2">
-        <div class="field"><label>Division</label><input id="new-team-division" required /></div>
-        <div class="field"><label>Season</label><input id="new-team-season" required /></div>
-      </div>
       <div class="form-msg" id="team-form-msg"></div>
       <div class="modal-foot">
         <button type="button" class="btn ghost" id="team-form-cancel">Cancel</button>
@@ -490,8 +485,8 @@
       <form id="create-gm-form" style="max-width:420px;">
         <div class="field"><label>Team name</label><input id="gm-team-name" required /></div>
         <div class="grid-2">
-          <div class="field"><label>Division</label><input id="gm-division" required /></div>
-          <div class="field"><label>Season</label><input id="gm-season" required /></div>
+          <div class="field"><label>Division (optional)</label><input id="gm-division" /></div>
+          <div class="field"><label>Season (optional)</label><input id="gm-season" /></div>
         </div>
         <div class="field"><label>GM email</label><input id="gm-email" type="email" required /></div>
         <div class="field"><label>Temporary password</label><input id="gm-password" type="text" minlength="8" required /></div>
@@ -661,14 +656,12 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
   const team_name = document.getElementById('signup-team-name').value.trim();
-  const division = document.getElementById('signup-division').value.trim();
-  const season = document.getElementById('signup-season').value.trim();
 
   try {
     const res = await fetch(CONFIG.workerUrl + '/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, team_name, division, season }),
+      body: JSON.stringify({ email, password, team_name }),
     });
     const out = await res.json();
     if (!res.ok || out.error) throw new Error(out.error || 'Could not create your account.');
@@ -766,8 +759,6 @@ document.getElementById('team-form').addEventListener('submit', async (e) => {
   const msg = document.getElementById('team-form-msg');
   const { data, error } = await sb.from('teams').insert({
     name: document.getElementById('new-team-name').value.trim(),
-    division: document.getElementById('new-team-division').value.trim(),
-    season: document.getElementById('new-team-season').value.trim(),
     gm_user_id: state.session.user.id,
   }).select().single();
 
@@ -797,15 +788,38 @@ function renderNameplate() {
   document.documentElement.style.setProperty('--team-primary', t.colour_primary);
   document.documentElement.style.setProperty('--team-secondary', t.colour_secondary);
   document.getElementById('team-name').textContent = t.name;
-  document.getElementById('team-meta').textContent = `${t.division} · ${t.season}`;
-  document.getElementById('detail-name').textContent = t.name;
-  document.getElementById('detail-division').textContent = t.division;
-  document.getElementById('detail-season').textContent = t.season;
+  const metaParts = [t.division, t.season].filter(Boolean);
+  const metaEl = document.getElementById('team-meta');
+  metaEl.textContent = metaParts.join(' · ');
+  metaEl.style.display = metaParts.length ? 'block' : 'none';
+  document.getElementById('detail-name').value = t.name;
+  document.getElementById('detail-division').value = t.division || '';
+  document.getElementById('detail-season').value = t.season || '';
   document.getElementById('chip-primary').style.background = t.colour_primary;
   document.getElementById('chip-secondary').style.background = t.colour_secondary;
   document.getElementById('color-primary').value = t.colour_primary;
   document.getElementById('color-secondary').value = t.colour_secondary;
 }
+
+document.getElementById('save-details-btn').addEventListener('click', async () => {
+  const msg = document.getElementById('team-msg');
+  const { data, error } = await sb.from('teams')
+    .update({
+      name: document.getElementById('detail-name').value.trim(),
+      division: document.getElementById('detail-division').value.trim() || null,
+      season: document.getElementById('detail-season').value.trim() || null,
+    })
+    .eq('id', state.team.id)
+    .select().single();
+
+  if (error) { msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+  state.team = data;
+  const idx = state.teams.findIndex(t => t.id === data.id);
+  if (idx !== -1) state.teams[idx] = data;
+  renderTeamSwitcher();
+  renderNameplate();
+  msg.textContent = 'Team details saved.'; msg.className = 'form-msg ok';
+});
 
 document.getElementById('save-colours-btn').addEventListener('click', async () => {
   const primary = document.getElementById('color-primary').value;
@@ -871,7 +885,7 @@ function renderAdminTeams() {
   document.getElementById('admin-teams-empty').style.display = adminTeams.length ? 'none' : 'block';
   adminTeams.forEach(t => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.division)}</td><td>${escapeHtml(t.season)}</td><td>${escapeHtml(t.gm_email || '—')}</td>`;
+    tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.division || '—')}</td><td>${escapeHtml(t.season || '—')}</td><td>${escapeHtml(t.gm_email || '—')}</td>`;
     body.appendChild(tr);
   });
 }
