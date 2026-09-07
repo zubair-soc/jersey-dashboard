@@ -399,11 +399,13 @@
         <h2>Roster</h2>
         <button class="btn" id="add-player-btn">Add player</button>
       </div>
+      <button type="button" class="link-btn" id="size-chart-btn" style="margin-bottom:14px;">View size chart</button>
+      <br>
       <label class="toggle-inactive" style="margin-bottom:14px;">
         <input type="checkbox" id="show-inactive" /> Show removed players
       </label>
       <table>
-        <thead><tr><th>#</th><th>Name</th><th>Size</th><th>Position</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Sock</th><th>Position</th><th>Notes</th><th></th></tr></thead>
         <tbody id="roster-body"></tbody>
       </table>
       <div class="empty-state" id="roster-empty" style="display:none;">No players on the roster yet. Add your first player to get started.</div>
@@ -511,12 +513,12 @@
         <div class="field"><label>Jersey number</label><input id="player-number" type="number" min="0" max="99" required /></div>
         <div class="field">
           <label>Jersey size</label>
-          <select id="player-size">
-            <option>YS</option><option>YM</option><option>YL</option>
-            <option>AS</option><option>AM</option><option>AL</option>
-            <option>AXL</option><option>A2XL</option>
-          </select>
+          <select id="player-size"></select>
         </div>
+      </div>
+      <div class="field">
+        <label>Sock size</label>
+        <select id="player-sock-size"><option value="">—</option></select>
       </div>
       <div class="field">
         <label>Position</label>
@@ -532,6 +534,52 @@
         <button type="submit" class="btn" id="player-save">Save player</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="overlay" id="size-chart-overlay">
+  <div class="modal" style="width:640px;">
+    <h3>Jersey &amp; sock size chart</h3>
+    <p style="font-size:13px; color:var(--ink-soft); margin-top:-12px;">Youth sizes aren't offered yet — adult and goalie only for now.</p>
+
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Adult jerseys</div>
+    <table style="margin-bottom:20px;">
+      <thead><tr><th>Size</th><th>Height</th><th>Chest</th><th>Length</th><th>Arm length</th><th>Arm hole</th><th>Wrist</th></tr></thead>
+      <tbody>
+        <tr><td class="num-cell">A-S</td><td>160 cm</td><td>22"</td><td>30.5"</td><td>61"</td><td>13.5"</td><td>6"</td></tr>
+        <tr><td class="num-cell">A-M</td><td>170 cm</td><td>23"</td><td>30.5"</td><td>65"</td><td>14"</td><td>6.25"</td></tr>
+        <tr><td class="num-cell">A-L</td><td>175 cm</td><td>25"</td><td>31.5"</td><td>68"</td><td>14.5"</td><td>6.5"</td></tr>
+        <tr><td class="num-cell">A-XL</td><td>180 cm</td><td>27"</td><td>33"</td><td>70"</td><td>15"</td><td>6.75"</td></tr>
+        <tr><td class="num-cell">A-2XL</td><td>185 cm</td><td>29"</td><td>34"</td><td>72"</td><td>15.5"</td><td>7"</td></tr>
+      </tbody>
+    </table>
+
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Goalie</div>
+    <table style="margin-bottom:20px;">
+      <thead><tr><th>Size</th><th>Height</th><th>Chest</th><th>Length</th><th>Arm length</th><th>Arm hole</th><th>Wrist</th></tr></thead>
+      <tbody>
+        <tr><td class="num-cell">G2XL</td><td>—</td><td>31"</td><td>35"</td><td>70"</td><td>16.5"</td><td>10.75"</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px; color:var(--ink-soft); margin-top:-12px;">GXL and G3XL are also available — ask SOC for measurements.</p>
+
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Socks</div>
+    <table>
+      <thead><tr><th>Size</th><th>Length</th></tr></thead>
+      <tbody>
+        <tr><td class="num-cell">S</td><td>21"</td></tr>
+        <tr><td class="num-cell">S-Tall</td><td>23"</td></tr>
+        <tr><td class="num-cell">M</td><td>25"</td></tr>
+        <tr><td class="num-cell">M-Tall</td><td>28"</td></tr>
+        <tr><td class="num-cell">L</td><td>30"</td></tr>
+        <tr><td class="num-cell">XL</td><td>32"</td></tr>
+        <tr><td class="num-cell">2XL</td><td>32"</td></tr>
+      </tbody>
+    </table>
+
+    <div class="modal-foot">
+      <button type="button" class="btn ghost" id="size-chart-close">Close</button>
+    </div>
   </div>
 </div>
 
@@ -608,6 +656,10 @@ let state = {
   orders: [],
   requests: [],
 };
+
+// Youth sizes (Y-S, Y-M, Y-L, Y-XL, YG) are intentionally left out for now.
+const JERSEY_SIZES = ['A-S', 'A-M', 'A-L', 'A-XL', 'A-2XL', 'GXL', 'G2XL', 'G3XL'];
+const SOCK_SIZES = ['S', 'S-Tall', 'M', 'M-Tall', 'L', 'XL', '2XL'];
 
 // ------------------------------------------------------------
 // Auth
@@ -931,6 +983,15 @@ document.getElementById('create-gm-form').addEventListener('submit', async (e) =
   btn.disabled = false; btn.textContent = 'Create account';
 });
 
+// Populate the static size dropdowns once at load
+document.getElementById('player-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
+document.getElementById('player-sock-size').innerHTML =
+  '<option value="">—</option>' + SOCK_SIZES.map(s => `<option>${s}</option>`).join('');
+
+const sizeChartOverlay = document.getElementById('size-chart-overlay');
+document.getElementById('size-chart-btn').addEventListener('click', () => sizeChartOverlay.classList.add('visible'));
+document.getElementById('size-chart-close').addEventListener('click', () => sizeChartOverlay.classList.remove('visible'));
+
 // ------------------------------------------------------------
 // Roster
 // ------------------------------------------------------------
@@ -956,6 +1017,7 @@ function renderRoster() {
       <td class="num-cell">${p.jersey_number}</td>
       <td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td>
       <td>${p.jersey_size}</td>
+      <td>${p.sock_size || '—'}</td>
       <td>${p.position || '—'}</td>
       <td>${p.notes ? escapeHtml(p.notes) : '—'}</td>
       <td class="row-actions">
@@ -995,6 +1057,7 @@ function openPlayerModal(id) {
     document.getElementById('player-last').value = p.last_name;
     document.getElementById('player-number').value = p.jersey_number;
     document.getElementById('player-size').value = p.jersey_size;
+    document.getElementById('player-sock-size').value = p.sock_size || '';
     document.getElementById('player-position').value = p.position || '';
     document.getElementById('player-notes').value = p.notes || '';
   }
@@ -1012,6 +1075,7 @@ document.getElementById('player-form').addEventListener('submit', async (e) => {
     last_name: document.getElementById('player-last').value.trim(),
     jersey_number: parseInt(document.getElementById('player-number').value, 10),
     jersey_size: document.getElementById('player-size').value,
+    sock_size: document.getElementById('player-sock-size').value || null,
     position: document.getElementById('player-position').value || null,
     notes: document.getElementById('player-notes').value.trim() || null,
   };
@@ -1085,9 +1149,7 @@ function addOrderLine(prefill) {
     </select>
     <input class="line-number" type="number" min="0" max="99" placeholder="#" value="${prefill?.jersey_number || ''}" />
     <select class="line-size">
-      <option>YS</option><option>YM</option><option>YL</option>
-      <option>AS</option><option>AM</option><option>AL</option>
-      <option>AXL</option><option>A2XL</option>
+      ${JERSEY_SIZES.map(s => `<option>${s}</option>`).join('')}
     </select>
     <input class="line-qty" type="number" min="1" value="1" />
     <button type="button" class="link-btn remove-line">Remove</button>
