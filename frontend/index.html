@@ -658,8 +658,16 @@ let state = {
 };
 
 // Youth sizes (Y-S, Y-M, Y-L, Y-XL, YG) are intentionally left out for now.
-const JERSEY_SIZES = ['A-S', 'A-M', 'A-L', 'A-XL', 'A-2XL', 'GXL', 'G2XL', 'G3XL'];
-const SOCK_SIZES = ['S', 'S-Tall', 'M', 'M-Tall', 'L', 'XL', '2XL'];
+const JERSEY_SIZES = ['A-S', 'A-M', 'A-L', 'A-XL', 'A-2XL', 'A-3XL', 'GXL', 'G2XL', 'G3XL'];
+const SOCK_SIZES = [
+  { code: 'S', length: '21"' },
+  { code: 'S-Tall', length: '23"' },
+  { code: 'M', length: '25"' },
+  { code: 'M-Tall', length: '28"' },
+  { code: 'L', length: '30"' },
+  { code: 'XL', length: '32"' },
+  { code: '2XL', length: '32"' },
+];
 
 // ------------------------------------------------------------
 // Auth
@@ -986,7 +994,7 @@ document.getElementById('create-gm-form').addEventListener('submit', async (e) =
 // Populate the static size dropdowns once at load
 document.getElementById('player-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
 document.getElementById('player-sock-size').innerHTML =
-  '<option value="">—</option>' + SOCK_SIZES.map(s => `<option>${s}</option>`).join('');
+  '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
 
 const sizeChartOverlay = document.getElementById('size-chart-overlay');
 document.getElementById('size-chart-btn').addEventListener('click', () => sizeChartOverlay.classList.add('visible'));
