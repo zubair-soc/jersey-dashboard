@@ -291,6 +291,16 @@
   .swatch input[type=color] { width: 40px; height: 32px; padding: 0; border: 1px solid var(--ice-line); border-radius: 4px; }
 
   .toggle-inactive { font-size: 13px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .inline-input {
+    padding: 7px 9px;
+    border: 1px solid var(--ice-line);
+    border-radius: var(--radius);
+    background: #fff;
+    font-size: 13px;
+  }
+  .inline-input:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+  #add-player-row td { padding: 10px 8px; }
 </style>
 </head>
 <body>
@@ -408,20 +418,20 @@
         <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Sock</th><th>Position</th><th>Notes</th><th></th></tr></thead>
         <tbody>
           <tr id="add-player-row">
-            <td><input type="number" id="add-number" min="0" max="99" placeholder="#" style="width:48px;" /></td>
+            <td><input type="number" id="add-number" min="0" max="99" placeholder="#" class="inline-input" style="width:48px;" /></td>
             <td style="display:flex; gap:4px;">
-              <input type="text" id="add-first" placeholder="First" style="width:70px;" />
-              <input type="text" id="add-last" placeholder="Last" style="width:70px;" />
+              <input type="text" id="add-first" placeholder="First" class="inline-input" style="width:70px;" />
+              <input type="text" id="add-last" placeholder="Last" class="inline-input" style="width:70px;" />
             </td>
-            <td><select id="add-jersey-size"></select></td>
-            <td><select id="add-sock-size"><option value="">—</option></select></td>
+            <td><select id="add-jersey-size" class="inline-input"></select></td>
+            <td><select id="add-sock-size" class="inline-input"><option value="">—</option></select></td>
             <td>
-              <select id="add-position">
+              <select id="add-position" class="inline-input">
                 <option value="">—</option>
                 <option>Forward</option><option>Defence</option><option>Goalie</option>
               </select>
             </td>
-            <td><input type="text" id="add-notes" placeholder="Notes" style="width:100%;" /></td>
+            <td><input type="text" id="add-notes" placeholder="Notes" class="inline-input" style="width:100%;" /></td>
             <td><button type="button" class="btn" id="add-player-inline-btn" style="padding:6px 12px; font-size:13px;">Add</button></td>
           </tr>
         </tbody>
