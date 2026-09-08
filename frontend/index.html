@@ -48,11 +48,24 @@
 
   /* ---------- Auth screen ---------- */
   #auth-screen {
+    display: none;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background: var(--rink-navy);
+  }
+  #auth-screen.visible { display: flex; }
+
+  #boot-loading {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--rink-navy);
+    color: #7d97ac;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.05em;
   }
 
   .auth-card {
@@ -304,6 +317,9 @@
 </style>
 </head>
 <body>
+
+<!-- ================= BOOT LOADING (avoids a login-page flash) ================= -->
+<div id="boot-loading">LOADING…</div>
 
 <!-- ================= AUTH SCREEN ================= -->
 <div id="auth-screen">
@@ -741,6 +757,23 @@ let state = {
   orders: [],
   requests: [],
 };
+let currentTab = 'team';
+
+// ------------------------------------------------------------
+// URL state — so a refresh doesn't lose which team/tab you were on
+// ------------------------------------------------------------
+function getUrlParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+function updateUrlState(teamId, tab) {
+  const params = new URLSearchParams(window.location.search);
+  params.delete('join'); // never coexists with app state
+  if (teamId) params.set('team', teamId); else params.delete('team');
+  if (tab) params.set('tab', tab); else params.delete('tab');
+  const query = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : ''));
+}
 
 // Youth sizes (Y-S, Y-M, Y-L, Y-XL, YG) are intentionally left out for now.
 // "A-" prefix dropped since youth isn't offered — no ambiguity to disambiguate.
@@ -851,8 +884,19 @@ async function onSignedIn(session) {
 
   if (adminRow) {
     authScreen.style.display = 'none';
-    adminAppEl.classList.add('visible');
     document.getElementById('admin-user-email').textContent = session.user.email;
+
+    // Restore "managing team X" across a refresh, if the URL says so
+    const urlTeamId = getUrlParam('team');
+    if (urlTeamId) {
+      const { data: team } = await sb.from('teams').select('*').eq('id', urlTeamId).maybeSingle();
+      if (team) {
+        await manageTeamAsAdmin(team, getUrlParam('tab') || 'team');
+        return;
+      }
+    }
+
+    adminAppEl.classList.add('visible');
     await loadAdminTeams();
     renderAdminTeams();
     return;
@@ -860,6 +904,7 @@ async function onSignedIn(session) {
 
   const { data: teams, error } = await sb.from('teams').select('*').order('created_at', { ascending: true });
   if (error || !teams || teams.length === 0) {
+    authScreen.classList.add('visible');
     document.getElementById('login-msg').textContent =
       'Signed in, but no team is linked to this account yet. Try creating one from the sign-up screen.';
     document.getElementById('login-msg').className = 'form-msg error';
@@ -867,7 +912,10 @@ async function onSignedIn(session) {
     return;
   }
   state.teams = teams;
-  state.team = teams[0];
+
+  // Restore whichever of their own teams was active, if the URL says so
+  const urlTeamId = getUrlParam('team');
+  state.team = teams.find(t => t.id === urlTeamId) || teams[0];
 
   authScreen.style.display = 'none';
   appEl.classList.add('visible');
@@ -879,6 +927,7 @@ async function onSignedIn(session) {
   renderRoster();
   renderOrders();
   renderRequests();
+  showTab(getUrlParam('tab') || 'team');
 }
 
 function renderTeamSwitcher() {
@@ -894,6 +943,7 @@ document.getElementById('team-switcher').addEventListener('change', async (e) =>
   renderRoster();
   renderOrders();
   renderRequests();
+  updateUrlState(state.team.id, currentTab);
 });
 
 const teamOverlay = document.getElementById('team-overlay');
@@ -923,15 +973,22 @@ document.getElementById('team-form').addEventListener('submit', async (e) => {
   renderRoster();
   renderOrders();
   renderRequests();
+  updateUrlState(state.team.id, currentTab);
 });
 
 // Restore session on reload (skipped entirely on a public join link)
 const joinToken = new URLSearchParams(window.location.search).get('join');
 if (joinToken) {
+  document.getElementById('boot-loading').style.display = 'none';
   initJoinScreen(joinToken);
 } else {
   sb.auth.getSession().then(({ data }) => {
-    if (data.session) onSignedIn(data.session);
+    document.getElementById('boot-loading').style.display = 'none';
+    if (data.session) {
+      onSignedIn(data.session);
+    } else {
+      authScreen.classList.add('visible');
+    }
   });
 }
 
@@ -940,7 +997,7 @@ function initJoinScreen(token) {
   const joinScreen = document.getElementById('join-screen');
   joinScreen.style.display = 'flex';
 
-  document.getElementById('join-jersey-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
+  document.getElementById('join-jersey-size').innerHTML = JERSEY_SIZES.map(s => `<option${s === 'L' ? ' selected' : ''}>${s}</option>`).join('');
   document.getElementById('join-sock-size').innerHTML =
     '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
 
@@ -1111,15 +1168,18 @@ document.getElementById('save-colours-btn').addEventListener('click', async () =
 // ------------------------------------------------------------
 // Tab navigation
 // ------------------------------------------------------------
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    ['team', 'roster', 'orders', 'requests'].forEach(t => {
-      document.getElementById('tab-' + t).style.display = (t === btn.dataset.tab) ? 'block' : 'none';
-    });
-  });
+document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => showTab(btn.dataset.tab));
 });
+
+function showTab(tabName) {
+  document.querySelectorAll('.nav-item[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+  ['team', 'roster', 'orders', 'requests'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = (t === tabName) ? 'block' : 'none';
+  });
+  currentTab = tabName;
+  updateUrlState(state.team ? state.team.id : null, tabName);
+}
 
 // ------------------------------------------------------------
 // Admin: sign out + tab nav
@@ -1178,7 +1238,7 @@ function renderAdminTeams() {
 
 // Lets an admin open a team's full dashboard (same UI a GM sees) to
 // manage its roster, orders, and requests directly.
-async function manageTeamAsAdmin(team) {
+async function manageTeamAsAdmin(team, tab = 'team') {
   state.team = team;
   state.teams = [team];
   state.isAdminViewingTeam = true;
@@ -1196,10 +1256,12 @@ async function manageTeamAsAdmin(team) {
   renderRoster();
   renderOrders();
   renderRequests();
+  showTab(tab);
 }
 
 document.getElementById('back-to-admin-btn').addEventListener('click', async () => {
   state.isAdminViewingTeam = false;
+  updateUrlState(null, null);
   appEl.classList.remove('visible');
   adminAppEl.classList.add('visible');
   await loadAdminTeams();
@@ -1248,10 +1310,10 @@ document.getElementById('create-gm-form').addEventListener('submit', async (e) =
 });
 
 // Populate the static size dropdowns once at load
-document.getElementById('player-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
+document.getElementById('player-size').innerHTML = JERSEY_SIZES.map(s => `<option${s === 'L' ? ' selected' : ''}>${s}</option>`).join('');
 document.getElementById('player-sock-size').innerHTML =
   '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
-document.getElementById('add-jersey-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
+document.getElementById('add-jersey-size').innerHTML = JERSEY_SIZES.map(s => `<option${s === 'L' ? ' selected' : ''}>${s}</option>`).join('');
 document.getElementById('add-sock-size').innerHTML =
   '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
 
@@ -1483,7 +1545,7 @@ function addOrderLine(prefill) {
     </select>
     <input class="line-number" type="number" min="0" max="99" placeholder="#" value="${prefill?.jersey_number || ''}" />
     <select class="line-size">
-      ${JERSEY_SIZES.map(s => `<option>${s}</option>`).join('')}
+      ${JERSEY_SIZES.map(s => `<option${s === 'L' ? ' selected' : ''}>${s}</option>`).join('')}
     </select>
     <input class="line-qty" type="number" min="1" value="1" />
     <button type="button" class="link-btn remove-line">Remove</button>
