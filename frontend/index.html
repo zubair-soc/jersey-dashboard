@@ -806,7 +806,11 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   try {
     const res = await fetch(CONFIG.workerUrl + '/api/signup', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: CONFIG.supabaseKey,
+        Authorization: `Bearer ${CONFIG.supabaseKey}`,
+      },
       body: JSON.stringify({ email, password, team_name }),
     });
     const out = await res.json();
@@ -942,7 +946,11 @@ function initJoinScreen(token) {
 
   fetch(CONFIG.workerUrl + '/api/team-lookup', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: CONFIG.supabaseKey,
+      Authorization: `Bearer ${CONFIG.supabaseKey}`,
+    },
     body: JSON.stringify({ token }),
   })
     .then(r => r.json())
@@ -974,7 +982,11 @@ function initJoinScreen(token) {
     try {
       const res = await fetch(CONFIG.workerUrl + '/api/roster-signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: CONFIG.supabaseKey,
+          Authorization: `Bearer ${CONFIG.supabaseKey}`,
+        },
         body: JSON.stringify({
           token,
           first_name: document.getElementById('join-first').value.trim(),
