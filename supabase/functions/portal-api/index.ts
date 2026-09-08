@@ -23,10 +23,11 @@
  * IMPORTANT — this function must be deployed with "Verify JWT" turned
  * OFF (Dashboard → Edge Functions → portal-api → Settings). Supabase's
  * gateway checks that setting BEFORE your code ever runs, and /signup
- * is called by people who don't have a session token yet. Every other
- * route still verifies the Authorization header itself, in code below
- * (see getAuthUser) — turning the platform toggle off does not make
- * anything more open than it already was with the Cloudflare version.
+ * and /team-lookup + /roster-signup are called by people who don't have
+ * a session token at all. Every other route still verifies the
+ * Authorization header itself, in code below (see getAuthUser) —
+ * turning the platform toggle off does not make anything more open
+ * than it already was with the Cloudflare version.
  */
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -68,6 +69,19 @@ async function getAuthUser(req: Request) {
 async function getOwnedTeam(userId: string, teamId: string | undefined) {
   if (!teamId) return null;
   const url = `${SUPABASE_URL}/rest/v1/teams?id=eq.${teamId}&gm_user_id=eq.${userId}&select=*`;
+  const res = await fetch(url, {
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+  });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+/** Look up a team by its public roster_signup_token (no ownership check —
+ * this token IS the credential for the public sign-up link). */
+async function getTeamByToken(token: string | undefined) {
+  if (!token) return null;
+  const url = `${SUPABASE_URL}/rest/v1/teams?roster_signup_token=eq.${encodeURIComponent(token)}&select=id,name,colour_primary,colour_secondary`;
   const res = await fetch(url, {
     headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
   });
@@ -176,6 +190,45 @@ async function notify(team: any, type: string, payload: unknown) {
   }
 }
 
+/** Public route: look up a team's public branding by its sign-up token,
+ * so the join page can show the right name/colours before submitting. */
+async function handleTeamLookup(body: any) {
+  const team = await getTeamByToken(body.token);
+  if (!team) throw new Error("That link isn't valid — ask your GM for the current one.");
+  return { name: team.name, colour_primary: team.colour_primary, colour_secondary: team.colour_secondary };
+}
+
+/** Public route: a player adds themselves to a team's roster via a
+ * shared link — no account, no GM data entry required. */
+async function handleRosterSignup(body: any) {
+  const { token, first_name, last_name, jersey_number, jersey_size, sock_size, position } = body;
+  if (!first_name || !last_name || !jersey_size) {
+    throw new Error("First name, last name, and jersey size are required.");
+  }
+
+  const team = await getTeamByToken(token);
+  if (!team) throw new Error("That link isn't valid — ask your GM for the current one.");
+
+  await supabaseInsert(
+    "players",
+    [
+      {
+        team_id: team.id,
+        first_name,
+        last_name,
+        jersey_number: jersey_number || null,
+        jersey_size,
+        sock_size: sock_size || null,
+        position: position || null,
+        active: true,
+      },
+    ],
+    false
+  );
+
+  return { team_name: team.name };
+}
+
 /** Public route: open sign-up. Creates a new GM account + their first team. */
 async function handleSignup(body: any) {
   const { email, password, team_name } = body;
@@ -281,9 +334,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ---- Public route: no session required ----
+    // ---- Public routes: no session required ----
     if (path.endsWith("/signup")) {
       const result = await handleSignup(body);
+      return json({ ok: true, result }, 200, origin);
+    }
+    if (path.endsWith("/team-lookup")) {
+      const result = await handleTeamLookup(body);
+      return json({ ok: true, result }, 200, origin);
+    }
+    if (path.endsWith("/roster-signup")) {
+      const result = await handleRosterSignup(body);
       return json({ ok: true, result }, 200, origin);
     }
 

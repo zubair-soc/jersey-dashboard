@@ -314,11 +314,11 @@
     <form id="login-form">
       <div class="field">
         <label for="login-email">Email</label>
-        <input id="login-email" type="email" autocomplete="username" required />
+        <input id="login-email" name="email" type="email" autocomplete="username" required />
       </div>
       <div class="field">
         <label for="login-password">Password</label>
-        <input id="login-password" type="password" autocomplete="current-password" required />
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
       </div>
       <button class="btn full" type="submit" id="login-btn">Sign in</button>
       <div class="form-msg" id="login-msg"></div>
@@ -335,16 +335,52 @@
       </div>
       <div class="field">
         <label for="signup-email">Your email</label>
-        <input id="signup-email" type="email" autocomplete="username" required />
+        <input id="signup-email" name="email" type="email" autocomplete="username" required />
       </div>
       <div class="field">
         <label for="signup-password">Choose a password</label>
-        <input id="signup-password" type="password" autocomplete="new-password" minlength="8" required />
+        <input id="signup-password" name="new-password" type="password" autocomplete="new-password" minlength="8" required />
       </div>
       <button class="btn full" type="submit" id="signup-btn">Create account</button>
       <div class="form-msg" id="signup-msg"></div>
       <button type="button" class="link-btn" id="show-login-btn" style="margin-top:12px;">← Back to sign in</button>
     </form>
+  </div>
+</div>
+
+<!-- ================= PLAYER SELF SIGN-UP (public link) ================= -->
+<div id="join-screen" style="display:none; min-height:100vh; align-items:center; justify-content:center; background: var(--rink-navy);">
+  <div class="auth-card" style="width:420px;">
+    <div class="auth-mark" id="join-team-label">JOIN THE ROSTER</div>
+    <h1 id="join-team-name" style="font-size:24px;">Loading…</h1>
+
+    <form id="join-form">
+      <div class="grid-2">
+        <div class="field"><label>First name</label><input id="join-first" required /></div>
+        <div class="field"><label>Last name</label><input id="join-last" required /></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Jersey size</label><select id="join-jersey-size"></select></div>
+        <div class="field"><label>Sock size</label><select id="join-sock-size"><option value="">—</option></select></div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Position (optional)</label>
+          <select id="join-position">
+            <option value="">—</option>
+            <option>Forward</option><option>Defence</option><option>Goalie</option>
+          </select>
+        </div>
+        <div class="field"><label>Preferred number (optional)</label><input id="join-number" type="number" min="0" max="99" /></div>
+      </div>
+      <button class="btn full" type="submit" id="join-submit-btn">Join the roster</button>
+      <div class="form-msg" id="join-msg"></div>
+    </form>
+
+    <div id="join-success" style="display:none; text-align:center; padding: 12px 0;">
+      <p style="font-size:16px; margin-bottom:14px;">You're on the roster! 🏒</p>
+      <button type="button" class="link-btn" id="join-again-btn">Add another player</button>
+    </div>
   </div>
 </div>
 
@@ -400,6 +436,15 @@
           </div>
           <button class="btn ghost" id="save-colours-btn">Save colours</button>
         </div>
+      </div>
+      <div class="field">
+        <label>Player sign-up link</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input id="signup-link-display" readonly class="inline-input" style="flex:1; background:#f5f8fa;" />
+          <button class="btn ghost" type="button" id="copy-signup-link-btn">Copy</button>
+          <button class="btn ghost" type="button" id="regen-signup-link-btn">Regenerate</button>
+        </div>
+        <p style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Share this with players/parents — anyone with the link can add themselves to your roster, no account needed. Regenerating creates a new link and the old one stops working.</p>
       </div>
       <div class="form-msg" id="team-msg"></div>
     </div>
@@ -540,7 +585,7 @@
         <div class="field"><label>Last name</label><input id="player-last" required /></div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Jersey number</label><input id="player-number" type="number" min="0" max="99" required /></div>
+        <div class="field"><label>Jersey number</label><input id="player-number" type="number" min="0" max="99" /></div>
         <div class="field">
           <label>Jersey size</label>
           <select id="player-size"></select>
@@ -576,11 +621,11 @@
     <table style="margin-bottom:20px;">
       <thead><tr><th>Size</th><th>Height</th><th>Chest</th><th>Length</th><th>Arm length</th><th>Arm hole</th><th>Wrist</th></tr></thead>
       <tbody>
-        <tr><td class="num-cell">A-S</td><td>160 cm</td><td>22"</td><td>30.5"</td><td>61"</td><td>13.5"</td><td>6"</td></tr>
-        <tr><td class="num-cell">A-M</td><td>170 cm</td><td>23"</td><td>30.5"</td><td>65"</td><td>14"</td><td>6.25"</td></tr>
-        <tr><td class="num-cell">A-L</td><td>175 cm</td><td>25"</td><td>31.5"</td><td>68"</td><td>14.5"</td><td>6.5"</td></tr>
-        <tr><td class="num-cell">A-XL</td><td>180 cm</td><td>27"</td><td>33"</td><td>70"</td><td>15"</td><td>6.75"</td></tr>
-        <tr><td class="num-cell">A-2XL</td><td>185 cm</td><td>29"</td><td>34"</td><td>72"</td><td>15.5"</td><td>7"</td></tr>
+        <tr><td class="num-cell">S</td><td>160 cm</td><td>22"</td><td>30.5"</td><td>61"</td><td>13.5"</td><td>6"</td></tr>
+        <tr><td class="num-cell">M</td><td>170 cm</td><td>23"</td><td>30.5"</td><td>65"</td><td>14"</td><td>6.25"</td></tr>
+        <tr><td class="num-cell">L</td><td>175 cm</td><td>25"</td><td>31.5"</td><td>68"</td><td>14.5"</td><td>6.5"</td></tr>
+        <tr><td class="num-cell">XL</td><td>180 cm</td><td>27"</td><td>33"</td><td>70"</td><td>15"</td><td>6.75"</td></tr>
+        <tr><td class="num-cell">2XL</td><td>185 cm</td><td>29"</td><td>34"</td><td>72"</td><td>15.5"</td><td>7"</td></tr>
       </tbody>
     </table>
 
@@ -688,7 +733,8 @@ let state = {
 };
 
 // Youth sizes (Y-S, Y-M, Y-L, Y-XL, YG) are intentionally left out for now.
-const JERSEY_SIZES = ['A-S', 'A-M', 'A-L', 'A-XL', 'A-2XL', 'A-3XL', 'GXL', 'G2XL', 'G3XL'];
+// "A-" prefix dropped since youth isn't offered — no ambiguity to disambiguate.
+const JERSEY_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', 'GXL', 'G2XL', 'G3XL'];
 const SOCK_SIZES = [
   { code: 'S', length: '21"' },
   { code: 'S-Tall', length: '23"' },
@@ -865,10 +911,88 @@ document.getElementById('team-form').addEventListener('submit', async (e) => {
   renderRequests();
 });
 
-// Restore session on reload
-sb.auth.getSession().then(({ data }) => {
-  if (data.session) onSignedIn(data.session);
-});
+// Restore session on reload (skipped entirely on a public join link)
+const joinToken = new URLSearchParams(window.location.search).get('join');
+if (joinToken) {
+  initJoinScreen(joinToken);
+} else {
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) onSignedIn(data.session);
+  });
+}
+
+function initJoinScreen(token) {
+  document.getElementById('auth-screen').style.display = 'none';
+  const joinScreen = document.getElementById('join-screen');
+  joinScreen.style.display = 'flex';
+
+  document.getElementById('join-jersey-size').innerHTML = JERSEY_SIZES.map(s => `<option>${s}</option>`).join('');
+  document.getElementById('join-sock-size').innerHTML =
+    '<option value="">—</option>' + SOCK_SIZES.map(s => `<option value="${s.code}">${s.code} (${s.length})</option>`).join('');
+
+  fetch(CONFIG.workerUrl + '/api/team-lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+    body: JSON.stringify({ token }),
+  })
+    .then(r => r.json())
+    .then(out => {
+      if (out.error || !out.result) {
+        document.getElementById('join-team-label').textContent = 'LINK NOT FOUND';
+        document.getElementById('join-team-name').textContent = "This sign-up link isn't valid — ask your GM for the current one.";
+        document.getElementById('join-form').style.display = 'none';
+        return;
+      }
+      document.getElementById('join-team-name').textContent = out.result.name;
+      document.documentElement.style.setProperty('--team-primary', out.result.colour_primary);
+      document.documentElement.style.setProperty('--team-secondary', out.result.colour_secondary);
+    })
+    .catch(() => {
+      document.getElementById('join-team-name').textContent = 'Something went wrong loading this link.';
+      document.getElementById('join-form').style.display = 'none';
+    });
+
+  document.getElementById('join-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('join-msg');
+    const btn = document.getElementById('join-submit-btn');
+    msg.textContent = ''; msg.className = 'form-msg';
+    btn.disabled = true; btn.textContent = 'Joining…';
+
+    const numberVal = document.getElementById('join-number').value;
+
+    try {
+      const res = await fetch(CONFIG.workerUrl + '/api/roster-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+        body: JSON.stringify({
+          token,
+          first_name: document.getElementById('join-first').value.trim(),
+          last_name: document.getElementById('join-last').value.trim(),
+          jersey_size: document.getElementById('join-jersey-size').value,
+          sock_size: document.getElementById('join-sock-size').value || null,
+          position: document.getElementById('join-position').value || null,
+          jersey_number: numberVal ? parseInt(numberVal, 10) : null,
+        }),
+      });
+      const out = await res.json();
+      if (!res.ok || out.error) throw new Error(out.error || 'Could not join the roster.');
+
+      document.getElementById('join-form').style.display = 'none';
+      document.getElementById('join-success').style.display = 'block';
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = 'form-msg error';
+    }
+    btn.disabled = false; btn.textContent = 'Join the roster';
+  });
+
+  document.getElementById('join-again-btn').addEventListener('click', () => {
+    document.getElementById('join-form').reset();
+    document.getElementById('join-form').style.display = 'block';
+    document.getElementById('join-success').style.display = 'none';
+  });
+}
 
 // ------------------------------------------------------------
 // Nameplate + team profile
@@ -889,6 +1013,8 @@ function renderNameplate() {
   document.getElementById('chip-secondary').style.background = t.colour_secondary;
   document.getElementById('color-primary').value = t.colour_primary;
   document.getElementById('color-secondary').value = t.colour_secondary;
+  document.getElementById('signup-link-display').value =
+    `${window.location.origin}${window.location.pathname}?join=${t.roster_signup_token}`;
 }
 
 document.getElementById('save-details-btn').addEventListener('click', async () => {
@@ -909,6 +1035,35 @@ document.getElementById('save-details-btn').addEventListener('click', async () =
   renderTeamSwitcher();
   renderNameplate();
   msg.textContent = 'Team details saved.'; msg.className = 'form-msg ok';
+});
+
+function randomSignupToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(9));
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+document.getElementById('copy-signup-link-btn').addEventListener('click', () => {
+  const input = document.getElementById('signup-link-display');
+  input.select();
+  navigator.clipboard.writeText(input.value);
+  const btn = document.getElementById('copy-signup-link-btn');
+  const original = btn.textContent;
+  btn.textContent = 'Copied!';
+  setTimeout(() => { btn.textContent = original; }, 1500);
+});
+
+document.getElementById('regen-signup-link-btn').addEventListener('click', async () => {
+  if (!confirm('Generate a new sign-up link? The old link will stop working immediately.')) return;
+  const { data, error } = await sb.from('teams')
+    .update({ roster_signup_token: randomSignupToken() })
+    .eq('id', state.team.id)
+    .select().single();
+
+  if (error) { alert(error.message); return; }
+  state.team = data;
+  const idx = state.teams.findIndex(t => t.id === data.id);
+  if (idx !== -1) state.teams[idx] = data;
+  renderNameplate();
 });
 
 document.getElementById('save-colours-btn').addEventListener('click', async () => {
@@ -1102,7 +1257,7 @@ function renderRoster() {
     const tr = document.createElement('tr');
     if (!p.active) tr.style.opacity = '0.5';
     tr.innerHTML = `
-      <td class="num-cell">${p.jersey_number}</td>
+      <td class="num-cell">${p.jersey_number ?? '—'}</td>
       <td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td>
       <td>${p.jersey_size}</td>
       <td>${p.sock_size || '—'}</td>
@@ -1198,7 +1353,7 @@ function openPlayerModal(id) {
     const p = state.players.find(x => x.id === id);
     document.getElementById('player-first').value = p.first_name;
     document.getElementById('player-last').value = p.last_name;
-    document.getElementById('player-number').value = p.jersey_number;
+    document.getElementById('player-number').value = p.jersey_number ?? '';
     document.getElementById('player-size').value = p.jersey_size;
     document.getElementById('player-sock-size').value = p.sock_size || '';
     document.getElementById('player-position').value = p.position || '';
@@ -1216,7 +1371,7 @@ document.getElementById('player-form').addEventListener('submit', async (e) => {
     team_id: state.team.id,
     first_name: document.getElementById('player-first').value.trim(),
     last_name: document.getElementById('player-last').value.trim(),
-    jersey_number: parseInt(document.getElementById('player-number').value, 10),
+    jersey_number: document.getElementById('player-number').value ? parseInt(document.getElementById('player-number').value, 10) : null,
     jersey_size: document.getElementById('player-size').value,
     sock_size: document.getElementById('player-sock-size').value || null,
     position: document.getElementById('player-position').value || null,
@@ -1282,7 +1437,7 @@ function addOrderLine(prefill) {
   row.className = 'order-line';
 
   const playerOptions = state.players.filter(p => p.active).map(p =>
-    `<option value="${p.id}" data-number="${p.jersey_number}" data-size="${p.jersey_size}" data-name="${escapeHtml(p.first_name + ' ' + p.last_name)}">${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</option>`
+    `<option value="${p.id}" data-number="${p.jersey_number ?? ''}" data-size="${p.jersey_size}" data-name="${escapeHtml(p.first_name + ' ' + p.last_name)}">${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</option>`
   ).join('');
 
   row.innerHTML = `
