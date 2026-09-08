@@ -255,6 +255,11 @@
   .pill.submitted, .pill.in_progress { background: #fdf1de; color: #93641c; }
   .pill.confirmed, .pill.shipped { background: #e4eef6; color: #2d5b7c; }
   .pill.completed, .pill.resolved { background: #e5f0ea; color: var(--ok); }
+  .pill.needed { background: #fdeceb; color: #a13a2f; }
+  .pill.manual-ordered { background: #fdf1de; color: #93641c; }
+  .pill.manual-received { background: #e5f0ea; color: var(--ok); }
+  .pill.clickable { cursor: pointer; }
+  .pill.clickable:hover { filter: brightness(0.95); }
 
   /* modal */
   .overlay {
@@ -1446,12 +1451,16 @@ function getPlayerOrderInfo(playerId) {
   return best;
 }
 
+const MANUAL_STATUS_CYCLE = { needed: 'ordered', ordered: 'received', received: 'needed' };
+const MANUAL_STATUS_LABEL = { needed: 'Needs order', ordered: 'Ordered', received: 'Received' };
+const MANUAL_STATUS_CLASS = { needed: 'needed', ordered: 'manual-ordered', received: 'manual-received' };
+
 function renderRoster() {
   const showInactive = document.getElementById('show-inactive').checked;
   const needsOrderOnly = document.getElementById('show-needs-order-only').checked;
 
   let rows = state.players.filter(p => showInactive || p.active);
-  if (needsOrderOnly) rows = rows.filter(p => !getPlayerOrderInfo(p.id));
+  if (needsOrderOnly) rows = rows.filter(p => !getPlayerOrderInfo(p.id) && (p.jersey_status || 'needed') === 'needed');
 
   rows = [...rows].sort((a, b) => {
     if (rosterSortMode === 'name') {
@@ -1469,9 +1478,10 @@ function renderRoster() {
     const tr = document.createElement('tr');
     if (!p.active) tr.style.opacity = '0.5';
     const orderInfo = getPlayerOrderInfo(p.id);
+    const manualStatus = p.jersey_status || 'needed';
     const orderCell = orderInfo
-      ? `<span class="pill ${orderInfo.status}">${orderInfo.status}</span>`
-      : `<span class="pill" style="background:#fdeceb; color:#a13a2f;">Needs order</span>`;
+      ? `<span class="pill ${orderInfo.status}" title="From a submitted order">${orderInfo.status}</span>`
+      : `<span class="pill clickable ${MANUAL_STATUS_CLASS[manualStatus]}" data-cycle-status="${p.id}" data-current-status="${manualStatus}" title="Click to update — no order on file for this player yet">${MANUAL_STATUS_LABEL[manualStatus]}</span>`;
     tr.innerHTML = `
       <td class="num-cell">${p.jersey_number ?? '—'}</td>
       <td>${escapeHtml(playerFullName(p))}</td>
@@ -1492,6 +1502,15 @@ function renderRoster() {
   body.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openPlayerModal(b.dataset.edit)));
   body.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => setPlayerActive(b.dataset.remove, false)));
   body.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', () => setPlayerActive(b.dataset.restore, true)));
+  body.querySelectorAll('[data-cycle-status]').forEach(el => el.addEventListener('click', () => cyclePlayerStatus(el.dataset.cycleStatus, el.dataset.currentStatus)));
+}
+
+async function cyclePlayerStatus(playerId, current) {
+  const next = MANUAL_STATUS_CYCLE[current] || 'needed';
+  const { error } = await sb.from('players').update({ jersey_status: next }).eq('id', playerId);
+  if (error) { alert(error.message); return; }
+  await loadPlayers();
+  renderRoster();
 }
 
 document.getElementById('show-inactive').addEventListener('change', renderRoster);
@@ -1690,7 +1709,7 @@ document.getElementById('new-order-btn').addEventListener('click', () => {
 document.getElementById('add-order-line').addEventListener('click', () => addOrderLine());
 
 document.getElementById('add-needs-order-btn').addEventListener('click', () => {
-  const needing = state.players.filter(p => p.active && !getPlayerOrderInfo(p.id));
+  const needing = state.players.filter(p => p.active && !getPlayerOrderInfo(p.id) && (p.jersey_status || 'needed') === 'needed');
   if (needing.length === 0) {
     alert("Everyone on the active roster already has an order on file.");
     return;
