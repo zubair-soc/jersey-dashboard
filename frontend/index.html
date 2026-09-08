@@ -391,7 +391,7 @@
             <option>Forward</option><option>Defence</option><option>Goalie</option>
           </select>
         </div>
-        <div class="field"><label>Preferred number (optional)</label><input id="join-number" type="number" min="0" max="99" /></div>
+        <div class="field"><label>Jersey number</label><input id="join-number" type="number" min="0" max="99" required /></div>
       </div>
       <button class="btn full" type="submit" id="join-submit-btn">Join the roster</button>
       <div class="form-msg" id="join-msg"></div>
@@ -626,7 +626,7 @@
       <input type="hidden" id="player-id" />
       <div class="grid-2">
         <div class="field"><label>First name</label><input id="player-first" required /></div>
-        <div class="field"><label>Last name</label><input id="player-last" required /></div>
+        <div class="field"><label>Last name (optional — blank for spares)</label><input id="player-last" /></div>
       </div>
       <div class="grid-2">
         <div class="field"><label>Jersey number</label><input id="player-number" type="number" min="0" max="99" /></div>
@@ -1474,7 +1474,7 @@ function renderRoster() {
       : `<span class="pill" style="background:#fdeceb; color:#a13a2f;">Needs order</span>`;
     tr.innerHTML = `
       <td class="num-cell">${p.jersey_number ?? '—'}</td>
-      <td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td>
+      <td>${escapeHtml(playerFullName(p))}</td>
       <td>${p.jersey_size}</td>
       <td>${p.name_bar_dark ? escapeHtml(p.name_bar_dark) : '—'}</td>
       <td>${p.name_bar_light ? escapeHtml(p.name_bar_light) : '—'}</td>
@@ -1531,16 +1531,16 @@ async function addPlayerInline() {
   const msg = document.getElementById('add-player-msg');
   msg.textContent = '';
 
-  if (!numberEl.value || !firstEl.value.trim() || !lastEl.value.trim()) {
-    msg.textContent = 'Jersey number, first name, and last name are required.';
-    numberEl.value ? (lastEl.value.trim() ? firstEl.focus() : lastEl.focus()) : numberEl.focus();
+  if (!numberEl.value || !firstEl.value.trim()) {
+    msg.textContent = 'Jersey number and first name are required.';
+    numberEl.value ? firstEl.focus() : numberEl.focus();
     return;
   }
 
   const payload = {
     team_id: state.team.id,
     first_name: firstEl.value.trim(),
-    last_name: lastEl.value.trim(),
+    last_name: lastEl.value.trim() || null,
     jersey_number: parseInt(numberEl.value, 10),
     jersey_size: sizeEl.value,
     name_bar_dark: barDarkEl.value.trim() || null,
@@ -1600,7 +1600,7 @@ document.getElementById('player-form').addEventListener('submit', async (e) => {
   const payload = {
     team_id: state.team.id,
     first_name: document.getElementById('player-first').value.trim(),
-    last_name: document.getElementById('player-last').value.trim(),
+    last_name: document.getElementById('player-last').value.trim() || null,
     jersey_number: document.getElementById('player-number').value ? parseInt(document.getElementById('player-number').value, 10) : null,
     jersey_size: document.getElementById('player-size').value,
     sock_size: document.getElementById('player-sock-size').value || null,
@@ -1705,7 +1705,7 @@ function addOrderLine(prefillPlayer) {
   row.className = 'order-line';
 
   const playerOptions = state.players.filter(p => p.active).map(p =>
-    `<option value="${p.id}" data-number="${p.jersey_number ?? ''}" data-size="${p.jersey_size}" data-name="${escapeHtml(p.first_name + ' ' + p.last_name)}">${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</option>`
+    `<option value="${p.id}" data-number="${p.jersey_number ?? ''}" data-size="${p.jersey_size}" data-name="${escapeHtml(playerFullName(p))}">${escapeHtml(playerFullName(p))}</option>`
   ).join('');
 
   row.innerHTML = `
@@ -1827,7 +1827,7 @@ document.getElementById('new-request-btn').addEventListener('click', () => {
   document.getElementById('request-msg').textContent = '';
   const sel = document.getElementById('request-player');
   sel.innerHTML = '<option value="">— Not player-specific —</option>' +
-    state.players.filter(p => p.active).map(p => `<option value="${p.id}">${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</option>`).join('');
+    state.players.filter(p => p.active).map(p => `<option value="${p.id}">${escapeHtml(playerFullName(p))}</option>`).join('');
   requestOverlay.classList.add('visible');
 });
 
@@ -1877,6 +1877,10 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
+}
+
+function playerFullName(p) {
+  return [p.first_name, p.last_name].filter(Boolean).join(' ');
 }
 </script>
 </body>
