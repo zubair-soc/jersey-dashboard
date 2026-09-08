@@ -364,6 +364,10 @@
         <div class="field"><label>Sock size</label><select id="join-sock-size"><option value="">—</option></select></div>
       </div>
       <div class="grid-2">
+        <div class="field"><label>Name on dark jersey</label><input id="join-bar-dark" placeholder="e.g. SMITH" /></div>
+        <div class="field"><label>Name on light jersey</label><input id="join-bar-light" placeholder="e.g. SMITH" /></div>
+      </div>
+      <div class="grid-2">
         <div class="field">
           <label>Position (optional)</label>
           <select id="join-position">
@@ -460,7 +464,7 @@
         <input type="checkbox" id="show-inactive" /> Show removed players
       </label>
       <table>
-        <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Sock</th><th>Position</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Bar (Dark)</th><th>Bar (Light)</th><th>Sock</th><th>Position</th><th>Notes</th><th></th></tr></thead>
         <tbody>
           <tr id="add-player-row">
             <td><input type="number" id="add-number" min="0" max="99" placeholder="#" class="inline-input" style="width:48px;" /></td>
@@ -469,6 +473,8 @@
               <input type="text" id="add-last" placeholder="Last" class="inline-input" style="width:70px;" />
             </td>
             <td><select id="add-jersey-size" class="inline-input"></select></td>
+            <td><input type="text" id="add-bar-dark" placeholder="e.g. SMITH" class="inline-input" style="width:90px;" /></td>
+            <td><input type="text" id="add-bar-light" placeholder="e.g. SMITH" class="inline-input" style="width:90px;" /></td>
             <td><select id="add-sock-size" class="inline-input"><option value="">—</option></select></td>
             <td>
               <select id="add-position" class="inline-input">
@@ -601,6 +607,10 @@
           <option value="">—</option>
           <option>Forward</option><option>Defence</option><option>Goalie</option>
         </select>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Name on dark jersey</label><input id="player-bar-dark" placeholder="e.g. SMITH" /></div>
+        <div class="field"><label>Name on light jersey</label><input id="player-bar-light" placeholder="e.g. SMITH" /></div>
       </div>
       <div class="field"><label>Notes</label><textarea id="player-notes"></textarea></div>
       <div class="form-msg" id="player-msg"></div>
@@ -971,6 +981,8 @@ function initJoinScreen(token) {
           last_name: document.getElementById('join-last').value.trim(),
           jersey_size: document.getElementById('join-jersey-size').value,
           sock_size: document.getElementById('join-sock-size').value || null,
+          name_bar_dark: document.getElementById('join-bar-dark').value.trim() || null,
+          name_bar_light: document.getElementById('join-bar-light').value.trim() || null,
           position: document.getElementById('join-position').value || null,
           jersey_number: numberVal ? parseInt(numberVal, 10) : null,
         }),
@@ -1260,6 +1272,8 @@ function renderRoster() {
       <td class="num-cell">${p.jersey_number ?? '—'}</td>
       <td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td>
       <td>${p.jersey_size}</td>
+      <td>${p.name_bar_dark ? escapeHtml(p.name_bar_dark) : '—'}</td>
+      <td>${p.name_bar_light ? escapeHtml(p.name_bar_light) : '—'}</td>
       <td>${p.sock_size || '—'}</td>
       <td>${p.position || '—'}</td>
       <td>${p.notes ? escapeHtml(p.notes) : '—'}</td>
@@ -1301,6 +1315,8 @@ async function addPlayerInline() {
   const firstEl = document.getElementById('add-first');
   const lastEl = document.getElementById('add-last');
   const sizeEl = document.getElementById('add-jersey-size');
+  const barDarkEl = document.getElementById('add-bar-dark');
+  const barLightEl = document.getElementById('add-bar-light');
   const sockEl = document.getElementById('add-sock-size');
   const posEl = document.getElementById('add-position');
   const notesEl = document.getElementById('add-notes');
@@ -1319,6 +1335,8 @@ async function addPlayerInline() {
     last_name: lastEl.value.trim(),
     jersey_number: parseInt(numberEl.value, 10),
     jersey_size: sizeEl.value,
+    name_bar_dark: barDarkEl.value.trim() || null,
+    name_bar_light: barLightEl.value.trim() || null,
     sock_size: sockEl.value || null,
     position: posEl.value || null,
     notes: notesEl.value.trim() || null,
@@ -1331,6 +1349,8 @@ async function addPlayerInline() {
   numberEl.value = '';
   firstEl.value = '';
   lastEl.value = '';
+  barDarkEl.value = '';
+  barLightEl.value = '';
   sockEl.value = '';
   posEl.value = '';
   notesEl.value = '';
@@ -1356,6 +1376,8 @@ function openPlayerModal(id) {
     document.getElementById('player-number').value = p.jersey_number ?? '';
     document.getElementById('player-size').value = p.jersey_size;
     document.getElementById('player-sock-size').value = p.sock_size || '';
+    document.getElementById('player-bar-dark').value = p.name_bar_dark || '';
+    document.getElementById('player-bar-light').value = p.name_bar_light || '';
     document.getElementById('player-position').value = p.position || '';
     document.getElementById('player-notes').value = p.notes || '';
   }
@@ -1374,6 +1396,8 @@ document.getElementById('player-form').addEventListener('submit', async (e) => {
     jersey_number: document.getElementById('player-number').value ? parseInt(document.getElementById('player-number').value, 10) : null,
     jersey_size: document.getElementById('player-size').value,
     sock_size: document.getElementById('player-sock-size').value || null,
+    name_bar_dark: document.getElementById('player-bar-dark').value.trim() || null,
+    name_bar_light: document.getElementById('player-bar-light').value.trim() || null,
     position: document.getElementById('player-position').value || null,
     notes: document.getElementById('player-notes').value.trim() || null,
   };

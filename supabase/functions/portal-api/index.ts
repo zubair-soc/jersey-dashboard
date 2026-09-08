@@ -201,7 +201,7 @@ async function handleTeamLookup(body: any) {
 /** Public route: a player adds themselves to a team's roster via a
  * shared link — no account, no GM data entry required. */
 async function handleRosterSignup(body: any) {
-  const { token, first_name, last_name, jersey_number, jersey_size, sock_size, position } = body;
+  const { token, first_name, last_name, jersey_number, jersey_size, sock_size, position, name_bar_dark, name_bar_light } = body;
   if (!first_name || !last_name || !jersey_size) {
     throw new Error("First name, last name, and jersey size are required.");
   }
@@ -219,6 +219,8 @@ async function handleRosterSignup(body: any) {
         jersey_number: jersey_number || null,
         jersey_size,
         sock_size: sock_size || null,
+        name_bar_dark: name_bar_dark || null,
+        name_bar_light: name_bar_light || null,
         position: position || null,
         active: true,
       },
