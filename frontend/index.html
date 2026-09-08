@@ -526,7 +526,7 @@
         <button class="btn" id="new-order-btn">New order</button>
       </div>
       <table>
-        <thead><tr><th>Date</th><th>Type</th><th>Lines</th><th>Status</th></tr></thead>
+        <thead><tr><th>Date</th><th>Type</th><th>Lines</th><th>Status</th><th></th></tr></thead>
         <tbody id="orders-body"></tbody>
       </table>
       <div class="empty-state" id="orders-empty" style="display:none;">No orders yet. Start a new order once your roster is set.</div>
@@ -566,6 +566,7 @@
   <nav class="sidebar">
     <div class="brand">SOC ADMIN</div>
     <button class="nav-item active" data-admin-tab="teams">Teams</button>
+    <button class="nav-item" data-admin-tab="orders">Orders</button>
     <button class="nav-item" data-admin-tab="create">Add GM directly</button>
     <div class="sidebar-foot">
       <div class="email" id="admin-user-email"></div>
@@ -587,6 +588,16 @@
         <tbody id="admin-teams-body"></tbody>
       </table>
       <div class="empty-state" id="admin-teams-empty" style="display:none;">No teams yet.</div>
+    </div>
+
+    <!-- ORDERS TAB (all teams) -->
+    <div class="content admin-tab" id="admin-tab-orders" style="display:none;">
+      <div class="section-head"><h2>All orders</h2></div>
+      <table>
+        <thead><tr><th>Team</th><th>Date</th><th>Type</th><th>Lines</th><th>Status</th><th></th></tr></thead>
+        <tbody id="admin-orders-body"></tbody>
+      </table>
+      <div class="empty-state" id="admin-orders-empty" style="display:none;">No orders submitted yet.</div>
     </div>
 
     <!-- CREATE GM TAB -->
@@ -911,6 +922,8 @@ async function onSignedIn(session) {
     adminAppEl.classList.add('visible');
     await loadAdminTeams();
     renderAdminTeams();
+    await loadAdminOrders();
+    renderAdminOrders();
     return;
   }
 
@@ -1278,7 +1291,77 @@ document.getElementById('back-to-admin-btn').addEventListener('click', async () 
   adminAppEl.classList.add('visible');
   await loadAdminTeams();
   renderAdminTeams();
+  await loadAdminOrders();
+  renderAdminOrders();
 });
+
+// ------------------------------------------------------------
+// Admin: all orders (every team)
+// ------------------------------------------------------------
+let adminOrders = [];
+let expandedOrderIds = new Set();
+
+async function loadAdminOrders() {
+  const { data, error } = await sb.from('jersey_orders')
+    .select('*, teams(name), order_lines(*)')
+    .order('created_at', { ascending: false });
+  if (!error) adminOrders = data;
+}
+
+function renderAdminOrders() {
+  const body = document.getElementById('admin-orders-body');
+  body.innerHTML = '';
+  document.getElementById('admin-orders-empty').style.display = adminOrders.length ? 'none' : 'block';
+
+  const statuses = ['draft', 'submitted', 'confirmed', 'shipped', 'completed'];
+
+  adminOrders.forEach(o => {
+    const tr = document.createElement('tr');
+    const date = new Date(o.created_at).toLocaleDateString();
+    const lines = o.order_lines || [];
+    tr.innerHTML = `
+      <td>${escapeHtml(o.teams ? o.teams.name : '—')}</td>
+      <td>${date}</td>
+      <td>${o.order_type === 'reorder' ? 'Reorder' : 'Initial'}</td>
+      <td>${lines.length}</td>
+      <td>
+        <select class="inline-input admin-order-status" data-order="${o.id}">
+          ${statuses.map(s => `<option value="${s}"${s === o.status ? ' selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td class="row-actions"><button data-toggle-order="${o.id}">${expandedOrderIds.has(o.id) ? 'Hide' : 'Details'}</button></td>`;
+    body.appendChild(tr);
+
+    if (expandedOrderIds.has(o.id)) {
+      const detailTr = document.createElement('tr');
+      const rowsHtml = lines.length
+        ? lines.map(l => `<tr><td class="num-cell">${l.jersey_number}</td><td>${escapeHtml(l.name_on_jersey)}</td><td>${l.jersey_size}</td><td>${l.quantity}</td><td>${l.line_type}</td></tr>`).join('')
+        : '<tr><td colspan="5" style="color:var(--ink-soft);">No lines on this order.</td></tr>';
+      detailTr.innerHTML = `
+        <td colspan="6" style="background:#f5f8fa; padding:14px 18px;">
+          ${o.notes ? `<div style="margin-bottom:10px; font-size:13px;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</div>` : ''}
+          <table style="width:100%;">
+            <thead><tr><th>#</th><th>Name on jersey</th><th>Size</th><th>Qty</th><th>Type</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </td>`;
+      body.appendChild(detailTr);
+    }
+  });
+
+  body.querySelectorAll('[data-toggle-order]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.toggleOrder;
+    if (expandedOrderIds.has(id)) expandedOrderIds.delete(id); else expandedOrderIds.add(id);
+    renderAdminOrders();
+  }));
+
+  body.querySelectorAll('.admin-order-status').forEach(sel => sel.addEventListener('change', async (e) => {
+    const { error } = await sb.from('jersey_orders').update({ status: e.target.value }).eq('id', e.target.dataset.order);
+    if (error) { alert(error.message); return; }
+    await loadAdminOrders();
+    renderAdminOrders();
+  }));
+}
 
 // ------------------------------------------------------------
 // Admin: create GM directly
@@ -1550,6 +1633,8 @@ async function loadOrders() {
   if (!error) state.orders = orders;
 }
 
+let expandedGmOrderIds = new Set();
+
 function renderOrders() {
   const body = document.getElementById('orders-body');
   body.innerHTML = '';
@@ -1558,13 +1643,37 @@ function renderOrders() {
   state.orders.forEach(o => {
     const tr = document.createElement('tr');
     const date = new Date(o.created_at).toLocaleDateString();
+    const lines = o.order_lines || [];
     tr.innerHTML = `
       <td>${date}</td>
       <td>${o.order_type === 'reorder' ? 'Reorder' : 'Initial'}</td>
-      <td>${(o.order_lines || []).length}</td>
-      <td><span class="pill ${o.status}">${o.status}</span></td>`;
+      <td>${lines.length}</td>
+      <td><span class="pill ${o.status}">${o.status}</span></td>
+      <td class="row-actions"><button data-toggle-order="${o.id}">${expandedGmOrderIds.has(o.id) ? 'Hide' : 'Details'}</button></td>`;
     body.appendChild(tr);
+
+    if (expandedGmOrderIds.has(o.id)) {
+      const detailTr = document.createElement('tr');
+      const rowsHtml = lines.length
+        ? lines.map(l => `<tr><td class="num-cell">${l.jersey_number}</td><td>${escapeHtml(l.name_on_jersey)}</td><td>${l.jersey_size}</td><td>${l.quantity}</td><td>${l.line_type}</td></tr>`).join('')
+        : '<tr><td colspan="5" style="color:var(--ink-soft);">No lines on this order.</td></tr>';
+      detailTr.innerHTML = `
+        <td colspan="5" style="background:#f5f8fa; padding:14px 18px;">
+          ${o.notes ? `<div style="margin-bottom:10px; font-size:13px;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</div>` : ''}
+          <table style="width:100%;">
+            <thead><tr><th>#</th><th>Name on jersey</th><th>Size</th><th>Qty</th><th>Type</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </td>`;
+      body.appendChild(detailTr);
+    }
   });
+
+  body.querySelectorAll('[data-toggle-order]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.toggleOrder;
+    if (expandedGmOrderIds.has(id)) expandedGmOrderIds.delete(id); else expandedGmOrderIds.add(id);
+    renderOrders();
+  }));
 }
 
 const orderOverlay = document.getElementById('order-overlay');
