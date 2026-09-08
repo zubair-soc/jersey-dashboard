@@ -476,11 +476,21 @@
       </div>
       <button type="button" class="link-btn" id="size-chart-btn" style="margin-bottom:14px;">View size chart</button>
       <br>
-      <label class="toggle-inactive" style="margin-bottom:14px;">
-        <input type="checkbox" id="show-inactive" /> Show removed players
-      </label>
+      <div style="display:flex; gap:20px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+        <label class="toggle-inactive">
+          <input type="checkbox" id="show-inactive" /> Show removed players
+        </label>
+        <label class="toggle-inactive">
+          <input type="checkbox" id="show-needs-order-only" /> Needs order only
+        </label>
+        <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft);">
+          Sort by:
+          <button type="button" class="btn ghost" id="sort-by-number-btn" style="padding:4px 10px; font-size:12px;">#</button>
+          <button type="button" class="btn ghost" id="sort-by-name-btn" style="padding:4px 10px; font-size:12px;">Name</button>
+        </div>
+      </div>
       <table>
-        <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Bar (Dark)</th><th>Bar (Light)</th><th>Sock</th><th>Position</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Jersey</th><th>Bar (Dark)</th><th>Bar (Light)</th><th>Sock</th><th>Position</th><th>Order</th><th>Notes</th><th></th></tr></thead>
         <tbody>
           <tr id="add-player-row">
             <td><input type="number" id="add-number" min="0" max="99" placeholder="#" class="inline-input" style="width:48px;" /></td>
@@ -498,6 +508,7 @@
                 <option>Forward</option><option>Defence</option><option>Goalie</option>
               </select>
             </td>
+            <td style="color:var(--ink-soft); font-size:13px;">—</td>
             <td><input type="text" id="add-notes" placeholder="Notes" class="inline-input" style="width:100%;" /></td>
             <td><button type="button" class="btn" id="add-player-inline-btn" style="padding:6px 12px; font-size:13px;">Add</button></td>
           </tr>
@@ -699,6 +710,7 @@
         <label>Lines</label>
         <div id="order-lines"></div>
         <button type="button" class="link-btn" id="add-order-line" style="margin-top:6px;">+ Add line</button>
+        <button type="button" class="link-btn" id="add-needs-order-btn" style="margin-top:6px; margin-left:16px;">+ Add everyone who needs an order</button>
       </div>
       <div class="field"><label>Notes for SOC</label><textarea id="order-notes"></textarea></div>
       <div class="form-msg" id="order-msg"></div>
@@ -1332,9 +1344,40 @@ async function loadPlayers() {
   if (!error) state.players = data;
 }
 
+let rosterSortMode = 'number'; // 'number' | 'name'
+
+// Derives a player's order status from order_lines — never stored,
+// never goes stale, since it's read straight from the orders that exist.
+function getPlayerOrderInfo(playerId) {
+  if (!playerId) return null;
+  let best = null;
+  state.orders.forEach(o => {
+    (o.order_lines || []).forEach(l => {
+      if (l.player_id === playerId) {
+        if (!best || new Date(o.created_at) > new Date(best.created_at)) {
+          best = { status: o.status, created_at: o.created_at };
+        }
+      }
+    });
+  });
+  return best;
+}
+
 function renderRoster() {
   const showInactive = document.getElementById('show-inactive').checked;
-  const rows = state.players.filter(p => showInactive || p.active);
+  const needsOrderOnly = document.getElementById('show-needs-order-only').checked;
+
+  let rows = state.players.filter(p => showInactive || p.active);
+  if (needsOrderOnly) rows = rows.filter(p => !getPlayerOrderInfo(p.id));
+
+  rows = [...rows].sort((a, b) => {
+    if (rosterSortMode === 'name') {
+      return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
+    }
+    const an = a.jersey_number ?? Infinity, bn = b.jersey_number ?? Infinity;
+    return an - bn;
+  });
+
   const body = document.getElementById('roster-body');
   body.innerHTML = '';
   document.getElementById('roster-empty').style.display = rows.length ? 'none' : 'block';
@@ -1342,6 +1385,10 @@ function renderRoster() {
   rows.forEach(p => {
     const tr = document.createElement('tr');
     if (!p.active) tr.style.opacity = '0.5';
+    const orderInfo = getPlayerOrderInfo(p.id);
+    const orderCell = orderInfo
+      ? `<span class="pill ${orderInfo.status}">${orderInfo.status}</span>`
+      : `<span class="pill" style="background:#fdeceb; color:#a13a2f;">Needs order</span>`;
     tr.innerHTML = `
       <td class="num-cell">${p.jersey_number ?? '—'}</td>
       <td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td>
@@ -1350,6 +1397,7 @@ function renderRoster() {
       <td>${p.name_bar_light ? escapeHtml(p.name_bar_light) : '—'}</td>
       <td>${p.sock_size || '—'}</td>
       <td>${p.position || '—'}</td>
+      <td>${orderCell}</td>
       <td>${p.notes ? escapeHtml(p.notes) : '—'}</td>
       <td class="row-actions">
         <button data-edit="${p.id}">Edit</button>
@@ -1364,6 +1412,9 @@ function renderRoster() {
 }
 
 document.getElementById('show-inactive').addEventListener('change', renderRoster);
+document.getElementById('show-needs-order-only').addEventListener('change', renderRoster);
+document.getElementById('sort-by-number-btn').addEventListener('click', () => { rosterSortMode = 'number'; renderRoster(); });
+document.getElementById('sort-by-name-btn').addEventListener('click', () => { rosterSortMode = 'name'; renderRoster(); });
 
 async function setPlayerActive(id, active) {
   const { error } = await sb.from('players').update({ active }).eq('id', id);
@@ -1529,7 +1580,17 @@ document.getElementById('new-order-btn').addEventListener('click', () => {
 
 document.getElementById('add-order-line').addEventListener('click', () => addOrderLine());
 
-function addOrderLine(prefill) {
+document.getElementById('add-needs-order-btn').addEventListener('click', () => {
+  const needing = state.players.filter(p => p.active && !getPlayerOrderInfo(p.id));
+  if (needing.length === 0) {
+    alert("Everyone on the active roster already has an order on file.");
+    return;
+  }
+  document.getElementById('order-lines').innerHTML = '';
+  needing.forEach(p => addOrderLine(p));
+});
+
+function addOrderLine(prefillPlayer) {
   const container = document.getElementById('order-lines');
   const row = document.createElement('div');
   row.className = 'order-line';
@@ -1543,13 +1604,18 @@ function addOrderLine(prefill) {
       <option value="">Custom line —</option>
       ${playerOptions}
     </select>
-    <input class="line-number" type="number" min="0" max="99" placeholder="#" value="${prefill?.jersey_number || ''}" />
+    <input class="line-number" type="number" min="0" max="99" placeholder="#" value="${prefillPlayer?.jersey_number ?? ''}" />
     <select class="line-size">
-      ${JERSEY_SIZES.map(s => `<option${s === 'L' ? ' selected' : ''}>${s}</option>`).join('')}
+      ${JERSEY_SIZES.map(s => `<option${s === (prefillPlayer?.jersey_size || 'L') ? ' selected' : ''}>${s}</option>`).join('')}
     </select>
     <input class="line-qty" type="number" min="1" value="1" />
     <button type="button" class="link-btn remove-line">Remove</button>
   `;
+
+  if (prefillPlayer) {
+    row.querySelector('.line-player').value = prefillPlayer.id;
+    row.dataset.nameOnJersey = `${prefillPlayer.first_name} ${prefillPlayer.last_name}`;
+  }
 
   row.querySelector('.line-player').addEventListener('change', (e) => {
     const opt = e.target.selectedOptions[0];
